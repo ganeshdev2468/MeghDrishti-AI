@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">MeghDrishti AI</string>
+    <string name="app_subtitle">ISRO-IMD Integrated Heavy Rainfall \u0026 Early Warning System</string>
+    <string name="firestore_database_id">meghdrishti-emergency-db</string>
+    <string name="default_web_client_id">YOUR_WEB_CLIENT_ID_HERE</string>
+
+    <!-- Navigation -->
+    <string name="nav_radar">Radar/Satellite</string>
+    <string name="nav_inundation">Inundation</string>
+    <string name="nav_nwp">NWP Models</string>
+    <string name="nav_emergency">Emergency</string>
+    <string name="nav_ai_scientist">AI Scientist</string>
+
+    <!-- Alert Levels -->
+    <string name="alert_green">GREEN — No Warning</string>
+    <string name="alert_yellow">YELLOW — Watch</string>
+    <string name="alert_orange">ORANGE — Alert</string>
+    <string name="alert_red">RED — Warning</string>
+    <string name="alert_extreme">EXTREME — Cloudburst</string>
+
+    <!-- Stations -->
+    <string name="station_mumbai">Mumbai (Colaba Observatory)</string>
+    <string name="station_chennai">Chennai (Nungambakkam)</string>
+    <string name="station_wayanad">Wayanad (Kalpetta)</string>
+    <string name="station_guwahati">Guwahati (Borjhar)</string>
+    <string name="station_delhi">Delhi NCR (Safdarjung)</string>
+    <string name="station_uttarakhand">Uttarakhand (Dehradun)</string>
+</resources>

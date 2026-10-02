@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeghDrishti AI — Professional Meteorological Operations & Early Warning Center</title>
+    <meta name="description" content="AI/ML-based integrated heavy rainfall, urban flood/inundation risk, Doppler weather radar, satellite telemetry, and early warning platform.">
+    
+    <!-- Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet Map Styles -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Main SaaS Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         PART 1: SPLIT-SCREEN AUTHENTICATION SHELL (/login, /signup, /forgot-password)
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div id="auth-container" class="auth-layout">
+        <!-- Left Column: Meteorological Intelligence Branding -->
+        <div class="auth-hero-pane">
+            <div class="hero-brand">
+                <div class="brand-icon-box">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <circle cx="12" cy="12" r="10" stroke="#38bdf8"/>
+                        <circle cx="12" cy="12" r="5" stroke="#14b8a6"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="#38bdf8"/>
+                        <path d="M2 12h20" stroke="#14b8a6"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="brand-name">MEGHDRISHTI AI</h1>
+                    <p class="brand-subtitle">METEOROLOGICAL INTELLIGENCE & EARLY WARNING</p>
+                </div>
+            </div>
+
+            <div class="hero-center">
+                <h2 class="hero-title">Integrated heavy rainfall, radar, satellite & urban flood prediction.</h2>
+                <p class="hero-desc">
+                    Mission-critical meteorological operations platform fusing Doppler weather radar, INSAT-3DS multi-spectral satellite imagery, multi-model numerical prediction (NWP), and hydrodynamic inundation risk models.
+                </p>
+                
+                <div class="hero-features">
+                    <div class="hero-feat-item">
+                        <span class="feat-dot"></span>
+                        <span>Doppler Radar PPI Reflectivity & Meso-Convective Storm Tracking</span>
+                    </div>
+                    <div class="hero-feat-item">
+                        <span class="feat-dot"></span>
+                        <span>INSAT-3DS Multi-Spectral Telemetry (TIR1, WV, VIS, Hydro-QPE)</span>
+                    </div>
+                    <div class="hero-feat-item">
+                        <span class="feat-dot"></span>
+                        <span>CartoDEM Hydrodynamic Inundation Modeling & OASIS CAP v1.2 Alerts</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-telemetry-badge">
+                <div class="mono">SYSTEM: OPERATIONAL • NODE 04 (ISRO/IMD)</div>
+                <div class="mono" id="auth-live-time">00:00:00 UTC</div>
+            </div>
+        </div>
+
+        <!-- Right Column: Interactive Auth Form -->
+        <div class="auth-form-pane">
+            
+            <!-- 1. LOGIN CARD -->
+            <div id="auth-view-login" class="auth-form-card" style="display:none;">
+                <div class="auth-card-header">
+                    <h3 class="auth-card-title">Operations Sign In</h3>
+                    <p class="auth-card-subtitle">Access MeghDrishti Meteorological Operations Center</p>
+                </div>
+
+                <div id="login-alert" class="auth-alert-msg error"></div>
+
+                <form id="form-login" class="auth-form">
+                    <div class="form-group">
+                        <label class="form-label" for="login-email">Official Responder Email</label>
+                        <input type="email" id="login-email" class="form-input" placeholder="officer@disaster.gov.in" required>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="form-label">
+                            <label for="login-password">Password</label>
+                            <a href="#/forgot-password" class="auth-nav-link" style="color:var(--cyan-primary); text-decoration:none;">Forgot password?</a>
+                        </div>
+                        <div class="form-input-wrap">
+                            <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+                            <button type="button" class="btn-toggle-pwd" data-target="login-password">👁️</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btn-login-submit" class="btn-primary">
+                        <span>Sign In to Mission Control</span>
+                    </button>
+
+                    <button type="button" id="btn-quick-demo-login" class="btn-demo-quick">
+                        ⚡ Quick Demo Access (ISRO SAC / IMD Responder)
+                    </button>
+
+                    <div class="auth-divider">
+                        <span>OR</span>
+                    </div>
+
+                    <button type="button" id="btn-google-login" class="btn-google">
+                        <svg width="18" height="18" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                        </svg>
+                        <span>Continue with Official Google ID</span>
+                    </button>
+
+                    <p class="auth-switch-text">
+                        Don't have an operations profile? <a href="#/signup" class="auth-nav-link">Create account</a>
+                    </p>
+                </form>
+            </div>
+
+            <!-- 2. SIGNUP CARD -->
+            <div id="auth-view-signup" class="auth-form-card" style="display:none;">
+                <div class="auth-card-header">
+                    <h3 class="auth-card-title">Register Agency Profile</h3>
+                    <p class="auth-card-subtitle">Register for MeghDrishti Meteorological Operations</p>
+                </div>
+
+                <div id="signup-alert" class="auth-alert-msg error"></div>
+
+                <form id="form-signup" class="auth-form">
+                    <div class="form-group">
+                        <label class="form-label" for="signup-name">Full Name</label>
+                        <input type="text" id="signup-name" class="form-input" placeholder="Dr. S. Ramanathan" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-email">Official Email</label>
+                        <input type="email" id="signup-email" class="form-input" placeholder="ramanathan@imd.gov.in" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-org">Organization / Agency</label>
+                        <input type="text" id="signup-org" class="form-input" placeholder="IMD / SDMA / NDMA / CWC / Municipal Corp">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-password">Password</label>
+                        <div class="form-input-wrap">
+                            <input type="password" id="signup-password" class="form-input" placeholder="At least 8 characters" required>
+                            <button type="button" class="btn-toggle-pwd" data-target="signup-password">👁️</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-confirm">Confirm Password</label>
+                        <input type="password" id="signup-confirm" class="form-input" placeholder="Repeat password" required>
+                    </div>
+
+                    <button type="submit" id="btn-signup-submit" class="btn-primary">
+                        <span>Create Operational Profile</span>
+                    </button>
+
+                    <p class="auth-switch-text">
+                        Already registered? <a href="#/login" class="auth-nav-link">Sign in</a>
+                    </p>
+                </form>
+            </div>
+
+            <!-- 3. FORGOT PASSWORD CARD -->
+            <div id="auth-view-forgot" class="auth-form-card" style="display:none;">
+                <div class="auth-card-header">
+                    <h3 class="auth-card-title">Reset Access</h3>
+                    <p class="auth-card-subtitle">Enter your official email to receive password recovery instructions</p>
+                </div>
+
+                <div id="forgot-alert" class="auth-alert-msg success"></div>
+
+                <form id="form-forgot" class="auth-form">
+                    <div class="form-group">
+                        <label class="form-label" for="forgot-email">Account Email</label>
+                        <input type="email" id="forgot-email" class="form-input" placeholder="officer@disaster.gov.in" required>
+                    </div>
+
+                    <button type="submit" id="btn-forgot-submit" class="btn-primary">
+                        <span>Send Recovery Link</span>
+                    </button>
+
+                    <p class="auth-switch-text">
+                        Remember password? <a href="#/login" class="auth-nav-link">Back to Sign in</a>
+                    </p>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         PART 2: AUTHENTICATED APPLICATION SHELL
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div id="app-shell" class="app-shell">
+
+        <!-- Left Sidebar Navigation -->
+        <aside class="app-sidebar">
+            <div class="sidebar-top">
+                <a href="#/dashboard" class="sidebar-brand">
+                    <div class="brand-icon-box" style="width:36px; height:36px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                            <circle cx="12" cy="12" r="10" stroke="#38bdf8"/>
+                            <circle cx="12" cy="12" r="5" stroke="#14b8a6"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="#38bdf8"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="brand-name" style="font-size:1.05rem;">MEGHDRISHTI AI</div>
+                        <div class="brand-subtitle" style="font-size:0.6rem; letter-spacing:1px;">METEOROLOGICAL OPS</div>
+                    </div>
+                </a>
+
+                <!-- 15 Required Navigation Links -->
+                <nav class="nav-menu">
+                    <a href="#/dashboard" class="nav-link active" data-route="/dashboard">
+                        <span class="icon">📊</span>
+                        <span>Overview</span>
+                    </a>
+                    <a href="#/weather" class="nav-link" data-route="/weather">
+                        <span class="icon">🌤️</span>
+                        <span>Live Weather</span>
+                    </a>
+                    <a href="#/rainfall" class="nav-link" data-route="/rainfall">
+                        <span class="icon">🌧️</span>
+                        <span>Rainfall</span>
+                    </a>
+                    <a href="#/radar" class="nav-link" data-route="/radar">
+                        <span class="icon">📡</span>
+                        <span>Radar</span>
+                    </a>
+                    <a href="#/satellite" class="nav-link" data-route="/satellite">
+                        <span class="icon">🛰️</span>
+                        <span>Satellite</span>
+                    </a>
+                    <a href="#/nwp" class="nav-link" data-route="/nwp">
+                        <span class="icon">📈</span>
+                        <span>NWP Models</span>
+                    </a>
+                    <a href="#/flood-risk" class="nav-link" data-route="/flood-risk">
+                        <span class="icon">🌊</span>
+                        <span>Flood Risk</span>
+                    </a>
+                    <a href="#/storm-tracking" class="nav-link" data-route="/storm-tracking">
+                        <span class="icon">⚡</span>
+                        <span>Storm Tracking</span>
+                    </a>
+                    <a href="#/alerts" class="nav-link" data-route="/alerts">
+                        <span class="icon">🚨</span>
+                        <span>Alerts</span>
+                    </a>
+                    <a href="#/map" class="nav-link" data-route="/map">
+                        <span class="icon">🗺️</span>
+                        <span>Global Map</span>
+                    </a>
+                    <a href="#/forecast" class="nav-link" data-route="/forecast">
+                        <span class="icon">📅</span>
+                        <span>Forecast</span>
+                    </a>
+                    <a href="#/history" class="nav-link" data-route="/history">
+                        <span class="icon">📚</span>
+                        <span>History</span>
+                    </a>
+                    <a href="#/ai-analysis" class="nav-link" data-route="/ai-analysis">
+                        <span class="icon">🧠</span>
+                        <span>AI Analysis</span>
+                    </a>
+                    <a href="#/operations" class="nav-link" data-route="/operations">
+                        <span class="icon">🛡️</span>
+                        <span>Operations</span>
+                    </a>
+                    <a href="#/settings" class="nav-link" data-route="/settings">
+                        <span class="icon">⚙️</span>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+
+                <!-- Saved Locations Memory Section -->
+                <div>
+                    <div class="sidebar-section-title">Saved Locations</div>
+                    <div id="sidebar-saved-locations" class="saved-loc-list">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Bottom: System & User -->
+            <div class="sidebar-footer">
+                <div class="system-status-pill">
+                    <div>
+                        <span class="sys-dot"></span>
+                        <span id="sidebar-mode-status">Mode: LIVE</span>
+                    </div>
+                    <span class="mono" id="sidebar-provider-tag" style="color:var(--cyan-primary);">ISRO/IMD/OM</span>
+                </div>
+
+                <div class="user-profile-bar">
+                    <img id="sidebar-user-avatar" src="" alt="Avatar" class="user-avatar">
+                    <div class="user-info-text">
+                        <div id="sidebar-user-name" class="user-name-text">Loading...</div>
+                        <div id="sidebar-user-org" class="user-role-text">Meteorological Ops</div>
+                    </div>
+                    <button id="btn-logout" class="btn-icon-logout" title="Sign Out">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Area -->
+        <div class="app-main">
+            <!-- Top Navigation Bar -->
+            <header class="app-topbar">
+                <!-- Global Location Search -->
+                <div class="search-container">
+                    <div class="search-input-wrap">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="global-search-input" class="search-input" placeholder="Search city or district (Mumbai, Delhi, Bengaluru, Chennai, London, Tokyo...)" autocomplete="off">
+                    </div>
+                    <div id="search-results-dropdown" class="search-results-dropdown">
+                        <!-- Populated dynamically via Open-Meteo Geocoding -->
+                    </div>
+                </div>
+
+                <!-- Topbar Actions & Status -->
+                <div class="topbar-right">
+                    <!-- Selected Location Chip -->
+                    <div class="topbar-location-chip" id="topbar-location-chip">
+                        <span>📍</span>
+                        <span id="topbar-location-name">Mumbai, Maharashtra, India</span>
+                    </div>
+
+                    <!-- Local Time Clock (Accurate to Location Timezone) -->
+                    <div class="topbar-clock-box">
+                        <span>🕒</span>
+                        <span id="topbar-local-time" class="mono">--:--:--</span>
+                        <span id="topbar-local-tz" class="mono" style="color:var(--cyan-primary); font-size:0.68rem;">IST</span>
+                    </div>
+
+                    <!-- Live / Demo Mode Switcher Badge -->
+                    <button id="btn-mode-toggle" class="mode-toggle-badge live" title="Click to toggle between LIVE and DEMO data mode">
+                        <span class="mode-pulse-dot"></span>
+                        <span id="mode-text">LIVE DATA</span>
+                    </button>
+
+                    <!-- Notifications Bell & Drawer Trigger -->
+                    <div class="notif-wrapper">
+                        <button id="btn-toggle-notifs" class="btn-icon-top" title="Notifications & Broadcast Alerts">
+                            <span>🔔</span>
+                            <span id="notif-count-badge" class="notif-badge">3</span>
+                        </button>
+                        <div id="notifs-dropdown" class="notifs-dropdown">
+                            <div class="notifs-header">
+                                <span>Emergency Broadcasts</span>
+                                <span class="mono" style="font-size:0.7rem; color:var(--cyan-primary);">CAP v1.2</span>
+                            </div>
+                            <div id="notifs-list" class="notifs-list">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Refresh Button -->
+                    <button id="btn-refresh-now" class="btn-refresh" title="Refresh Telemetry">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 4v6h-6"/>
+                            <path d="M1 20v-6h6"/>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                        </svg>
+                        <span id="refresh-time-text">Updated now</span>
+                    </button>
+
+                    <!-- Unit Switcher -->
+                    <div class="unit-toggle-pill">
+                        <button class="unit-opt active" data-unit="celsius">°C</button>
+                        <button class="unit-opt" data-unit="fahrenheit">°F</button>
+                    </div>
+
+                    <button id="btn-save-current-loc" class="btn-refresh" title="Save this location">
+                        <span>⭐</span> Save
+                    </button>
+                </div>
+            </header>
+
+            <!-- ── ROUTED VIEW CONTAINERS ── -->
+
+            <!-- VIEW 1: OVERVIEW (/dashboard) -->
+            <main id="view-dashboard" class="view-container active">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="loc-sub-tag">LOCATION-SPECIFIC RISK & EARLY WARNING</div>
+                        <h2 id="dash-city-title" class="dash-location-title">
+                            Mumbai, Maharashtra, India
+                        </h2>
+                        <div class="dash-meta-row">
+                            <span class="dash-meta-item">
+                                <span>🕒 Local Time:</span>
+                                <strong id="dash-local-datetime" class="mono">--:-- -- • --</strong>
+                            </span>
+                            <span class="dash-meta-item">
+                                <span>🌐 Coordinates:</span>
+                                <span id="dash-coordinates" class="coord-tag">19.0760° N, 72.8777° E</span>
+                            </span>
+                            <span class="dash-meta-item">
+                                <span>📡 Source:</span>
+                                <span id="dash-data-source">ISRO MOSDAC / IMD Radar / Open-Meteo</span>
+                            </span>
+                            <span class="dash-meta-item">
+                                <span>🛡️ Quality:</span>
+                                <span id="dash-data-qc" class="status-badge status-good">GOOD</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Primary Weather Hero Card -->
+                <div class="primary-weather-card">
+                    <div class="primary-weather-grid">
+                        <div class="p-weather-left">
+                            <div class="p-temp-row">
+                                <span id="hero-temp-val" class="p-temp-val">--°C</span>
+                                <div class="p-icon-box" id="hero-weather-icon">⛅</div>
+                            </div>
+                            <div id="hero-weather-condition" class="p-condition-text">Loading synoptic observations...</div>
+                            <div id="hero-feels-like" class="p-feels-like">Feels like --°C</div>
+                            <div class="p-high-low">
+                                <span>High: <strong id="hero-temp-max" class="mono">--°</strong></span>
+                                <span>Low: <strong id="hero-temp-min" class="mono">--°</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- 8 Primary Operational Metrics -->
+                        <div class="p-weather-metrics-grid">
+                            <div class="metric-card">
+                                <span class="m-label">Relative Humidity</span>
+                                <span id="metric-humidity" class="m-value">--%</span>
+                                <span class="m-sub">Dew Point: <span id="metric-dewpoint">--°</span></span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="m-label">Barometric Pressure</span>
+                                <span id="metric-pressure" class="m-value">-- hPa</span>
+                                <span class="m-sub" id="metric-pressure-tendency">Mean Sea Level</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="m-label">Surface Wind</span>
+                                <span id="metric-wind" class="m-value">-- km/h</span>
+                                <span class="m-sub" id="metric-wind-dir">Direction: --</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="m-label">Wind Gusts</span>
+                                <span id="metric-gusts" class="m-value">-- km/h</span>
+                                <span class="m-sub">Peak velocity</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="m-label">Precipitation Rate</span>
+                                <span id="metric-precip" class="m-value">-- mm/hr</span>
+                                <span class="m-sub">Current intensity</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="m-label">Horizontal Visibility</span>
+                                <span id="metric-visibility" class="m-value">-- km</span>
+                                <span class="m-sub" id="metric-vis-quality">Atmospheric clarity</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="m-label">UV Index</span>
+                                <span id="metric-uv" class="m-value">--</span>
+                                <span class="m-sub" id="metric-uv-level">Solar exposure</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="m-label">Cloud Cover</span>
+                                <span id="metric-cloudcover" class="m-value">--%</span>
+                                <span class="m-sub" id="metric-sun-times">Sunrise / Sunset</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Operational Dual Section: Heavy Rainfall Monitor & Hydrodynamic Inundation Risk -->
+                <div class="dash-two-col">
+                    <!-- Left: Heavy Rainfall Monitor -->
+                    <div class="section-card">
+                        <div class="section-card-header">
+                            <div class="section-card-title">
+                                <span>🌧️ Heavy Rainfall Monitor</span>
+                            </div>
+                            <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">Multi-Accumulation Telemetry</span>
+                        </div>
+                        <div class="rainfall-accum-grid">
+                            <div class="accum-item">
+                                <span class="accum-lbl">Current Rate</span>
+                                <span class="accum-val" id="rf-current-rate">-- mm/hr</span>
+                                <span class="accum-sub" id="rf-intensity-tag">Moderate</span>
+                            </div>
+                            <div class="accum-item">
+                                <span class="accum-lbl">1-Hour Acc.</span>
+                                <span class="accum-val" id="rf-1h-acc">-- mm</span>
+                                <span class="accum-sub">Last 60 mins</span>
+                            </div>
+                            <div class="accum-item">
+                                <span class="accum-lbl">3-Hour Acc.</span>
+                                <span class="accum-val" id="rf-3h-acc">-- mm</span>
+                                <span class="accum-sub">Convective total</span>
+                            </div>
+                            <div class="accum-item">
+                                <span class="accum-lbl">6-Hour Acc.</span>
+                                <span class="accum-val" id="rf-6h-acc">-- mm</span>
+                                <span class="accum-sub">Synoptic period</span>
+                            </div>
+                            <div class="accum-item">
+                                <span class="accum-lbl">24-Hour Acc.</span>
+                                <span class="accum-val" id="rf-24h-acc">-- mm</span>
+                                <span class="accum-sub">Daily accumulation</span>
+                            </div>
+                            <div class="accum-item">
+                                <span class="accum-lbl">Rainfall Anomaly</span>
+                                <span class="accum-val" id="rf-anomaly" style="color:var(--color-watch);">+185%</span>
+                                <span class="accum-sub">Above Normal (LPA)</span>
+                            </div>
+                        </div>
+                        <div class="trend-bar-box">
+                            <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:6px; display:flex; justify-content:space-between;">
+                                <span>Rainfall Intensity Trend: <strong id="rf-trend-desc" style="color:var(--cyan-primary);">Intensifying Convective Cluster</strong></span>
+                                <span class="mono" id="rf-provenance-badge">OBSERVATION (IMD/DWR)</span>
+                            </div>
+                            <div class="trend-track">
+                                <div class="trend-fill" id="rf-trend-bar" style="width: 78%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Flood / Inundation Risk Assessment -->
+                    <div class="section-card">
+                        <div class="section-card-header">
+                            <div class="section-card-title">
+                                <span>🌊 Urban Flood & Inundation Risk</span>
+                            </div>
+                            <span class="mono" style="font-size:0.75rem; color:var(--color-warning);">Hydrodynamic Risk Assessment</span>
+                        </div>
+                        <div class="inundation-summary-card">
+                            <div class="inundation-score-row">
+                                <div>
+                                    <span class="inundation-score-num" id="flood-risk-score">88</span>
+                                    <span class="inundation-score-max">/100</span>
+                                </div>
+                                <div class="risk-level-badge level-very-high" id="flood-risk-level">
+                                    VERY HIGH RISK
+                                </div>
+                            </div>
+                            <div class="inundation-metrics-row">
+                                <div class="inund-metric">
+                                    <span class="im-label">Affected Area Est.</span>
+                                    <span class="im-val" id="flood-affected-area">42.5 km²</span>
+                                </div>
+                                <div class="inund-metric">
+                                    <span class="im-label">Critical Time Window</span>
+                                    <span class="im-val" id="flood-time-window">18:30 – 21:30 IST</span>
+                                </div>
+                                <div class="inund-metric">
+                                    <span class="im-label">Model Confidence</span>
+                                    <span class="im-val" id="flood-confidence">84% (±6 mm)</span>
+                                </div>
+                            </div>
+                            <div class="xai-contributions">
+                                <div class="xai-title">Contributing Factors (Explainable AI):</div>
+                                <ul class="xai-list" id="flood-xai-factors">
+                                    <li>Sustained precipitation intensity > 35 mm/hr</li>
+                                    <li>Antecedent 24h soil saturation > 90%</li>
+                                    <li>Low-lying coastal terrain (CartoDEM < 12m)</li>
+                                    <li>Urban impervious concrete fraction (78%)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Short-Term Rainfall Nowcast (Next 15, 30, 60, 120, 180 min) -->
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <div class="section-card-title">
+                            <span>⏱️ Short-Term Rainfall Nowcast</span>
+                        </div>
+                        <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">Semi-Lagrangian Advection + DWR Extrapolation</span>
+                    </div>
+                    <div class="nowcast-grid" id="nowcast-step-container">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+
+                <!-- Two-Column Active Warnings: OFFICIAL WARNING vs MEGHDRISHTI AI RISK ASSESSMENT -->
+                <div class="dash-two-col">
+                    <!-- Left: Official Alerts (IMD/NDMA) -->
+                    <div class="official-warnings-card">
+                        <div class="section-card-header">
+                            <div class="section-card-title" style="color:#ef4444;">
+                                <span>🏛️ Official Government Warnings (IMD/NDMA)</span>
+                            </div>
+                            <span class="mono badge-official">AUTHORITATIVE</span>
+                        </div>
+                        <div id="official-alerts-container">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Right: MeghDrishti AI Risk Assessments -->
+                    <div class="ai-warnings-card">
+                        <div class="section-card-header">
+                            <div class="section-card-title" style="color:#38bdf8;">
+                                <span>🤖 MeghDrishti AI Early Warnings</span>
+                            </div>
+                            <span class="mono badge-ai">AI ESTIMATE (NOT OFFICIAL)</span>
+                        </div>
+                        <div id="ai-alerts-container">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hourly Forecast Carousel (Next 24 Hours) -->
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <div class="section-card-title">
+                            <span>🕒 24-Hour Synoptic Progression</span>
+                        </div>
+                        <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">High-Resolution Model Run</span>
+                    </div>
+                    <div id="hourly-forecast-track" class="hourly-scroll-container">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+
+                <!-- 7-Day Forecast & Risk Matrix -->
+                <div class="dash-two-col">
+                    <div class="section-card">
+                        <div class="section-card-header">
+                            <div class="section-card-title">
+                                <span>📅 7-Day Operational Forecast</span>
+                            </div>
+                            <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">Daily Aggregation</span>
+                        </div>
+                        <div id="daily-forecast-container" class="daily-list"></div>
+                    </div>
+
+                    <div class="section-card">
+                        <div class="section-card-header">
+                            <div class="section-card-title">
+                                <span>🛡️ Atmospheric Risk Matrix</span>
+                            </div>
+                            <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">Derived Operational Thresholds</span>
+                        </div>
+                        <div id="risk-matrix-container" class="risk-grid"></div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- VIEW 2: LIVE WEATHER SOUNDING (/weather) -->
+            <main id="view-weather" class="view-container">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="loc-sub-tag">IN-SITU OBSERVATIONS & SOUNDING</div>
+                        <h2 class="dash-location-title">Atmospheric Sounding & Live Telemetry</h2>
+                        <div class="dash-meta-row">
+                            <span>High-precision thermodynamic diagnostics, AWS ground network observations, and sensor quality control flags</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="weather-deep-dive-grid" class="dash-two-col"></div>
+            </main>
+
+            <!-- VIEW 3: RAINFALL MONITORING (/rainfall) -->
+            <main id="view-rainfall" class="view-container">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="loc-sub-tag">PRECIPITATION TELEMETRY</div>
+                        <h2 class="dash-location-title">Heavy Rainfall Monitoring & Anomaly Center</h2>
+                        <div class="dash-meta-row">
+                            <span>Ground station rain gauges, radar QPE, satellite Hydro-Estimator, and multi-hour accumulation statistics</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="rainfall-view-container"></div>
+            </main>
+
+            <!-- VIEW 4: DOPPLER RADAR (/radar) -->
+            <main id="view-radar" class="view-container">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="loc-sub-tag">REMOTE SENSING TELEMETRY</div>
+                        <h2 class="dash-location-title">Doppler Weather Radar (DWR) Operations Scope</h2>
+                        <div class="dash-meta-row">
+                            <span>Plan Position Indicator (PPI) sweep, reflectivity (dBZ), radial velocity, and storm cell velocity vectors</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="radar-view-container"></div>
+            </main>
+
+            <!-- VIEW 5: SATELLITE TELEMETRY (/satellite) -->
+            <main id="view-satellite" class="view-container">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="loc-sub-tag">SPACE APPLICATIONS & MOSDAC</div>
+                        <h2 class="dash-location-title">INSAT-3DS & Multi-Spectral Satellite Products</h2>
+                        <div class="dash-meta-row">
+                            <span>Thermal Infrared (TIR1), Water Vapour (WV), Visible (VIS), Hydro-Estimator QPE, and Cloud Motion Vectors (CMV)</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="satellite-view-container"></div>
+            </main>
+
+            <!-- VIEW 6: NWP MULTI-MODEL ENSEMBLE (/nwp) -->
+            <main id="view-nwp" class="view-container">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="loc-sub-tag">NUMERICAL WEATHER PREDICTION</div>
+                        <h2 class="dash-location-title">NWP Multi-Model Comparison & Convective Potential</h2>
+                        <div class="dash-meta-row">
+                            <span>Inter-comparison of IMD WRF (3 km), NCMRWF NCUM (12 km), ECMWF HRES (9 km), NOAA GFS (25 km), and Weighted Ensemble</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="nwp-view-container"></div>
+            </main>
+
+            <!-- VIEW 7: FLOOD RISK & INUNDATION (/flood-risk) -->
+            <main id="view-flood-risk" class="view-container">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="loc-sub-tag">HYDRODYNAMIC MODELING</div>
+                        <h2 class="dash-location-title">CartoDEM Urban Flood & Inundation Modeler</h2>
+                        <div class="dash-meta-row">
+                            <span>Interactive precipitation stress-test, return period simulation (T=2 to 100 yr), and RFC 7946 GeoJSON GIS export</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="flood-risk-view-container"></div>
+            </main>
+
+            <!-- VIEW 8: STORM TRACKING (/storm-tracking) -->
+            <main id="view-storm-tracking" class="view-container">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="loc-sub-tag">MESO-CONVECTIVE TRACKING</div>
+                        <h2 class="dash-location-title">TITAN/SCIT Meso-Convective Storm Cell Monitor</h2>
+                        <div class="dash-meta-row">
+                            <span>Real-time storm cell identification, centroid tracking, echo tops, VIL density, and projected 15/30/60 min cone of movement</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="storm-tracking-view-container"></div>
+            </main>
+
+            <!-- VIEW 9: ALERTS & EARLY WARNING (/alerts) -->
+            <main id="view-alerts" class="view-container">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="loc-sub-tag">CIVIL PROTECTION & DISASTER RESPONSE</div>
+                        <h2 class="dash-location-title">Civil Protection & Incident Response Center</h2>
+                        <div class="dash-meta-row">
+                            <span>OASIS Common Alerting Protocol (CAP v1.2) broadcast stream and multi-agency response triage</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="alerts-full-page-container"></div>
+            </main>
+
+            <!-- VIEW 10: GLOBAL MAP (/map) -->
+            <main id="view-map" class="view-container">
+                <div class="map-view-card">
+                    <div class="map-control-bar">
+                        <div style="font-size:0.85rem; font-weight:700; color:var(--cyan-primary);">
+                            GLOBAL METEOROLOGICAL OBSERVATION MAP (14 GIS LAYERS)
+                        </div>
+                        <div class="map-layers-group">
+                            <button class="map-layer-btn active" data-layer="standard">Terrain Base</button>
+                            <button class="map-layer-btn" data-layer="temp">Temperature</button>
+                            <button class="map-layer-btn" data-layer="precip">Precipitation</button>
+                            <button class="map-layer-btn" data-layer="radar">Radar Sweep</button>
+                            <button class="map-layer-btn" data-layer="satellite">Satellite TIR1</button>
+                            <button class="map-layer-btn" data-layer="inundation">Flood Risk</button>
+                        </div>
+                    </div>
+                    <div id="leaflet-map-element"></div>
+                </div>
+            </main>
+
+            <!-- VIEW 11: FORECAST EXTENDED (/forecast) -->
+            <main id="view-forecast" class="view-container">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="loc-sub-tag">MEDIUM-RANGE SYNOPTIC OUTLOOK</div>
+                        <h2 class="dash-location-title">Extended 14-Day Synoptic Outlook</h2>
+                        <div class="dash-meta-row">
+                            <span>High-resolution numerical weather prediction ensemble progression</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="extended-forecast-view-container"></div>
+            </main>
+
+            <!-- VIEW 12: HISTORICAL METEOROLOGY (/history) -->
+            <main id="view-history" class="view-container">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="loc-sub-tag">CLIMATOLOGY & RETROSPECTIVE ANALYSIS</div>
+                        <h2 class="dash-location-title">Historical Extreme Precipitation Events</h2>
+                        <div class="dash-meta-row">
+                            <span>Archived high-impact flood events (Mumbai 2005 944mm, Chennai 2015, Kedarnath 2013, Mahabaleshwar 2021)</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="history-view-container"></div>
+            </main>
+
+            <!-- VIEW 13: AI ANALYSIS & MODEL REGISTRY (/ai-analysis) -->
+            <main id="view-ai-analysis" class="view-container">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="loc-sub-tag">AI/ML HYDROLOGICAL INFERENCE</div>
+                        <h2 class="dash-location-title">AI/ML Feature Pipeline & Model Registry</h2>
+                        <div class="dash-meta-row">
+                            <span>Feature engineering, ConvLSTM inference, explainable AI contributions, and WMO/IMD Special Bulletin generator</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="ai-analysis-view-container"></div>
+            </main>
+
+            <!-- VIEW 14: OPERATIONS & SYSTEM HEALTH (/operations) -->
+            <main id="view-operations" class="view-container">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="loc-sub-tag">OBSERVABILITY & QUALITY CONTROL</div>
+                        <h2 class="dash-location-title">System Health & Telemetry Observability</h2>
+                        <div class="dash-meta-row">
+                            <span>Real-time ingestion pipelines, provider latencies, QC validation counters, and audit trail stream</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="operations-view-container"></div>
+            </main>
+
+            <!-- VIEW 15: SETTINGS (/settings) -->
+            <main id="view-settings" class="view-container">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="loc-sub-tag">CONFIGURATION & PREFERENCES</div>
+                        <h2 class="dash-location-title">System Settings & Data Mode Configuration</h2>
+                        <div class="dash-meta-row">
+                            <span>Responder profile, measurement units, saved locations, and provider connector settings</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="settings-card">
+                        <h3>Responder Profile</h3>
+                        <div class="form-group" style="margin-top:14px;">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" id="setting-full-name" class="form-input">
+                        </div>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="setting-email" class="form-input" disabled style="opacity:0.7;">
+                        </div>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label class="form-label">Organization / Agency</label>
+                            <input type="text" id="setting-org" class="form-input">
+                        </div>
+                        <button id="btn-save-profile" class="btn-primary" style="margin-top:18px;">
+                            <span>Save Profile</span>
+                        </button>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Measurement Units</h3>
+                        <div class="pref-row">
+                            <div class="pref-label-box">
+                                <span class="pref-title">Temperature Unit</span>
+                                <span class="pref-sub">Celsius (°C) or Fahrenheit (°F)</span>
+                            </div>
+                            <select id="pref-temp-select" class="custom-select" style="width:130px;">
+                                <option value="celsius">Celsius (°C)</option>
+                                <option value="fahrenheit">Fahrenheit (°F)</option>
+                            </select>
+                        </div>
+                        <div class="pref-row">
+                            <div class="pref-label-box">
+                                <span class="pref-title">Wind Velocity</span>
+                                <span class="pref-sub">Kilometers/hour, mph, or meters/sec</span>
+                            </div>
+                            <select id="pref-wind-select" class="custom-select" style="width:130px;">
+                                <option value="kmh">km/h</option>
+                                <option value="mph">mph</option>
+                                <option value="ms">m/s</option>
+                            </select>
+                        </div>
+                        <div class="pref-row">
+                            <div class="pref-label-box">
+                                <span class="pref-title">Atmospheric Pressure</span>
+                                <span class="pref-sub">Hectopascals or Inches of Mercury</span>
+                            </div>
+                            <select id="pref-pressure-select" class="custom-select" style="width:130px;">
+                                <option value="hpa">hPa</option>
+                                <option value="inhg">inHg</option>
+                            </select>
+                        </div>
+                        <div class="pref-row">
+                            <div class="pref-label-box">
+                                <span class="pref-title">Precipitation Depth</span>
+                                <span class="pref-sub">Millimeters or Inches</span>
+                            </div>
+                            <select id="pref-precip-select" class="custom-select" style="width:130px;">
+                                <option value="mm">Millimeters (mm)</option>
+                                <option value="inch">Inches (in)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-card" style="grid-column: 1 / -1;">
+                        <h3>Data Mode & Scientific Provider Connectors</h3>
+                        <div class="pref-row" style="margin-top:12px;">
+                            <div class="pref-label-box">
+                                <span class="pref-title">Current Operating Mode</span>
+                                <span class="pref-sub">Toggle between LIVE operational API feeds and calibrated scientific DEMO simulation</span>
+                            </div>
+                            <select id="setting-mode-select" class="custom-select" style="width:180px;">
+                                <option value="live">LIVE DATA MODE</option>
+                                <option value="demo">DEMO / SIMULATED</option>
+                            </select>
+                        </div>
+                        <div class="pref-row">
+                            <div class="pref-label-box">
+                                <span class="pref-title">Doppler Weather Radar Connector</span>
+                                <span class="pref-sub">IMD DWR S-Band / C-Band Network Gateway</span>
+                            </div>
+                            <span class="mono" style="color:var(--color-normal); font-size:0.8rem;">CONNECTED (imd-dwr.gov.in/telemetry)</span>
+                        </div>
+                        <div class="pref-row">
+                            <div class="pref-label-box">
+                                <span class="pref-title">Satellite Provider Connector</span>
+                                <span class="pref-sub">ISRO MOSDAC / SAC High-Throughput Satellite Stream</span>
+                            </div>
+                            <span class="mono" style="color:var(--color-normal); font-size:0.8rem;">CONNECTED (mosdac.gov.in/insat3ds)</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-card" style="grid-column: 1 / -1;">
+                        <h3>Saved Locations Management</h3>
+                        <div id="settings-saved-locations-list" style="margin-top:14px;"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Mobile Bottom Navigation -->
+        <nav class="mobile-bottom-nav">
+            <a href="#/dashboard" class="mobile-nav-item active" data-route="/dashboard">
+                <span class="icon">📊</span>
+                <span>Overview</span>
+            </a>
+            <a href="#/rainfall" class="mobile-nav-item" data-route="/rainfall">
+                <span class="icon">🌧️</span>
+                <span>Rain</span>
+            </a>
+            <a href="#/radar" class="mobile-nav-item" data-route="/radar">
+                <span class="icon">📡</span>
+                <span>Radar</span>
+            </a>
+            <a href="#/flood-risk" class="mobile-nav-item" data-route="/flood-risk">
+                <span class="icon">🌊</span>
+                <span>Flood</span>
+            </a>
+            <a href="#/alerts" class="mobile-nav-item" data-route="/alerts">
+                <span class="icon">🚨</span>
+                <span>Alerts</span>
+            </a>
+            <a href="#/settings" class="mobile-nav-item" data-route="/settings">
+                <span class="icon">⚙️</span>
+                <span>Settings</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Leaflet Map Script -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- ES Module Main Application Controller -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

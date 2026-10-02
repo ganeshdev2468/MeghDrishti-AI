@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Radar sweep circle -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="2"
+        android:pathData="M54,54m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="1.5"
+        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0" />
+    <!-- Radar beam line -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#1DE9B6"
+        android:strokeWidth="2.5"
+        android:pathData="M54,54L78,30" />
+    <!-- Center dot -->
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M54,54m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <!-- Cloud icon -->
+    <path
+        android:fillColor="#BBDEFB"
+        android:pathData="M40,68c-3,0 -5,-2.2 -5,-5s2,-5 5,-5c0.5,-4.5 4.3,-8 9,-8c4,0 7.3,2.6 8.5,6.2c0.5,-0.1 1,-0.2 1.5,-0.2c3.3,0 6,2.7 6,6s-2.7,6 -6,6z" />
+    <!-- Rain drops -->
+    <path
+        android:fillColor="#42A5F5"
+        android:pathData="M43,72l-1,4M48,71l-1,5M53,72l-1,4"
+        android:strokeColor="#42A5F5"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round" />
+</vector>

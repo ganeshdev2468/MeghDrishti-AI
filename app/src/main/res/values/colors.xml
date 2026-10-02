@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- IMD Alert Colors -->
+    <color name="imd_green">#FF2E7D32</color>
+    <color name="imd_yellow">#FFF9A825</color>
+    <color name="imd_orange">#FFEF6C00</color>
+    <color name="imd_red">#FFC62828</color>
+    <color name="imd_extreme">#FF6A1B9A</color>
+
+    <!-- Radar Colors (dBZ scale) -->
+    <color name="dbz_05">#FF00BFFF</color>
+    <color name="dbz_15">#FF00FF00</color>
+    <color name="dbz_25">#FFFFFF00</color>
+    <color name="dbz_35">#FFFF8C00</color>
+    <color name="dbz_45">#FFFF0000</color>
+    <color name="dbz_55">#FFDC143C</color>
+    <color name="dbz_65">#FF8B008B</color>
+
+    <!-- Theme -->
+    <color name="primary_dark">#FF0D1B2A</color>
+    <color name="surface_dark">#FF1B2838</color>
+    <color name="accent_cyan">#FF00E5FF</color>
+    <color name="accent_teal">#FF1DE9B6</color>
+</resources>
