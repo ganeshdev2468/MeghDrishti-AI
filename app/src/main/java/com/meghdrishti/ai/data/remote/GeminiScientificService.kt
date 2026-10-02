@@ -132,7 +132,7 @@ Generate a clearly labeled, non-official scenario assessment with:
             appendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
             appendLine("For decisions, consult current official IMD and local emergency-service guidance.")
             appendLine("Connect Gemini API to enable non-official scenario analysis.")
-            appendLine("Set GEMINI_API_KEY in local.properties or BuildConfig.")
+            appendLine("Set GEMINI_API_KEY in the build environment or as a Gradle project property.")
         }
     }
 

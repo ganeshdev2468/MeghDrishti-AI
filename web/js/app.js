@@ -1,6 +1,6 @@
 /**
- * MeghDrishti AI — Operational Meteorological SaaS Controller
- * Full Implementation across all 15 Operational Pages & Scientific Telemetry
+ * MeghDrishti AI static dashboard controller
+ * Open-Meteo weather data plus illustrative local demo products
  */
 
 import { AuthService } from './auth.js';
@@ -250,10 +250,15 @@ class MeghDrishtiApp {
             .filter(Boolean).join(', ');
         
         document.getElementById('dash-city-title').textContent = fullLocName;
-        document.getElementById('topbar-location-name').textContent = `${snapshot.location.name}, ${snapshot.location.country || snapshot.location.region}`;
+        document.getElementById('topbar-location-name').textContent = fullLocName;
         document.getElementById('dash-coordinates').textContent = 
             `${snapshot.location.lat.toFixed(4)}° N, ${snapshot.location.lon.toFixed(4)}° E (Elev: ${snapshot.location.elevation}m)`;
         document.getElementById('dash-data-source').textContent = snapshot.source;
+        const qualityBadge = document.getElementById('dash-data-qc');
+        if (qualityBadge) {
+            qualityBadge.textContent = snapshot.isDemo ? 'DEMO / FALLBACK' : 'OPEN-METEO FORECAST';
+            qualityBadge.className = `status-badge ${snapshot.isDemo ? 'status-suspect' : 'status-good'}`;
+        }
 
         // 2. Primary Hero Weather Card
         document.getElementById('hero-temp-val').textContent = weatherService.formatTemp(snapshot.temperature, prefs.temperature);
@@ -332,7 +337,7 @@ class MeghDrishtiApp {
         // 7. Active Warnings: Official vs AI Warnings
         const officialContainer = document.getElementById('official-alerts-container');
         if (officialContainer) {
-            officialContainer.innerHTML = alerts.officialAlerts.map(oa => `
+            officialContainer.innerHTML = alerts.officialAlerts.length ? alerts.officialAlerts.map(oa => `
                 <div style="background:var(--surface-slate-2); border-left:4px solid #ef4444; padding:12px; border-radius:4px; margin-bottom:10px;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
                         <strong style="color:#ef4444; font-size:0.85rem;">${oa.headline}</strong>
@@ -343,7 +348,7 @@ class MeghDrishtiApp {
                         Issued by: ${oa.issuer} • Valid until: ${new Date(oa.expires).toLocaleTimeString()}
                     </div>
                 </div>
-            `).join('');
+            `).join('') : '<p class="empty-alerts-box">No official warning feed is connected. Consult current IMD and local emergency-service guidance.</p>';
         }
 
         const aiContainer = document.getElementById('ai-alerts-container');
@@ -358,7 +363,7 @@ class MeghDrishtiApp {
                         Confidence: ${aw.confidence} • Expected Window: ${aw.timeWindow}
                     </p>
                     <div style="font-size:0.7rem; color:var(--text-muted); font-family:monospace;">
-                        Engine: ${aw.engine} (Scientific AI Estimate)
+                        Scenario source: ${aw.engine} (illustrative demo values, not a model output)
                     </div>
                 </div>
             `).join('');
@@ -449,9 +454,9 @@ class MeghDrishtiApp {
                 <div class="section-card">
                     <div class="section-card-header">
                         <div class="section-card-title">
-                            <span>📊 Polarimetric DWR Telemetry</span>
+                            <span>📊 Synthetic Radar Scenario</span>
                         </div>
-                        <span class="mono badge-official">IMD SPECIFICATION</span>
+                        <span class="mono badge-ai">DEMO VALUES</span>
                     </div>
 
                     <div class="rainfall-accum-grid">
@@ -662,7 +667,7 @@ class MeghDrishtiApp {
                     <div class="section-card-title">
                         <span>📈 Multi-Agency Numerical Prediction Matrix</span>
                     </div>
-                    <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">IMD WRF / NCUM / ECMWF / GFS</span>
+                    <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">STATIC EXAMPLES · NO FEEDS</span>
                 </div>
                 <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:6px; line-height:1.5;">
                     ${nwp.synopticDiagnosis}
@@ -724,9 +729,9 @@ class MeghDrishtiApp {
                 <div class="section-card">
                     <div class="section-card-header">
                         <div class="section-card-title">
-                            <span>🌧️ Observational Precipitation Gauges</span>
+                            <span>🌧️ Illustrative Rainfall Examples</span>
                         </div>
-                        <span class="mono badge-official">GROUND AWS & RADAR QPE</span>
+                        <span class="mono badge-ai">STATIC DEMO VALUES</span>
                     </div>
 
                     <div class="rainfall-accum-grid">
@@ -805,7 +810,7 @@ class MeghDrishtiApp {
                         <div class="section-card-title">
                             <span>🌊 Hydrodynamic Urban Inundation Modeler</span>
                         </div>
-                        <span class="mono badge-official">CartoDEM 10m & Q = CIA</span>
+                            <span class="mono badge-ai">Illustrative scenario</span>
                     </div>
 
                     <div class="slider-control-pane" style="margin-top:14px;">
@@ -989,7 +994,7 @@ class MeghDrishtiApp {
                     <div class="section-card-title">
                         <span>⚡ Active Meso-Convective Storm Cells (TITAN/SCIT)</span>
                     </div>
-                    <span class="mono badge-official">3 CELLS TRACKED</span>
+                    <span class="mono badge-ai">3 EXAMPLE CELLS</span>
                 </div>
                 <div class="nwp-table-wrap">
                     <table class="nwp-table">
@@ -1038,11 +1043,11 @@ class MeghDrishtiApp {
                 <div class="section-card">
                     <div class="section-card-header">
                         <div class="section-card-title" style="color:#ef4444;">
-                            <span>🏛️ Official OASIS CAP v1.2 Broadcasts</span>
+                            <span>🏛️ Official Warning Feed</span>
                         </div>
-                        <span class="mono badge-official">IMD / NDMA Sachet</span>
+                        <span class="mono badge-official">NOT CONNECTED</span>
                     </div>
-                    ${alerts.officialAlerts.map(oa => `
+                    ${alerts.officialAlerts.length ? alerts.officialAlerts.map(oa => `
                         <div style="background:var(--surface-slate-2); border-left:4px solid #ef4444; padding:14px; border-radius:6px; margin-top:12px;">
                             <strong style="color:#ef4444; font-size:0.95rem;">${oa.headline}</strong>
                             <p style="font-size:0.8rem; color:var(--text-secondary); margin:6px 0;">${oa.description}</p>
@@ -1053,15 +1058,15 @@ class MeghDrishtiApp {
                                 ${oa.issuer} • Valid: ${new Date(oa.effective).toLocaleTimeString()} - ${new Date(oa.expires).toLocaleTimeString()}
                             </div>
                         </div>
-                    `).join('')}
+                    `).join('') : '<p class="empty-alerts-box">This app does not ingest official alerts. Check IMD and local authority channels.</p>'}
                 </div>
 
                 <div class="section-card">
                     <div class="section-card-header">
                         <div class="section-card-title" style="color:var(--cyan-primary);">
-                            <span>🛡️ Internal Operator Triage Stream</span>
+                            <span>🛡️ Local Demo Triage Scenarios</span>
                         </div>
-                        <span class="mono" style="color:var(--cyan-primary); font-size:0.75rem;">DISASTER RESPONSE</span>
+                        <span class="mono" style="color:var(--cyan-primary); font-size:0.75rem;">NO DISPATCH</span>
                     </div>
                     ${alerts.operatorAlerts.map(op => `
                         <div style="background:var(--surface-slate-2); border:1px solid var(--border-subtle); padding:14px; border-radius:6px; margin-top:12px;">
@@ -1075,7 +1080,7 @@ class MeghDrishtiApp {
                             </div>
                             <div class="triage-btn-group">
                                 ${['ACKNOWLEDGED', 'INVESTIGATING', 'DISPATCHED', 'RESOLVED'].map(st => `
-                                    <button class="btn-triage ${op.status === st ? 'active' : ''}" onclick="alert('Status updated to: ${st}')">
+                                    <button class="btn-triage ${op.status === st ? 'active' : ''}" data-demo-incident="${op.id}" data-demo-status="${st}">
                                         ${st}
                                     </button>
                                 `).join('')}
@@ -1085,6 +1090,16 @@ class MeghDrishtiApp {
                 </div>
             </div>
         `;
+
+        container.querySelectorAll('[data-demo-incident]').forEach(button => {
+            button.addEventListener('click', () => {
+                const incident = alerts.operatorAlerts.find(item => item.id === button.dataset.demoIncident);
+                if (!incident) return;
+                incident.status = button.dataset.demoStatus;
+                this.renderAlertsView(data);
+                this.showGlobalToast('Demo status updated locally; no responder was contacted.', 'info');
+            });
+        });
     }
 
     /**
@@ -1212,17 +1227,17 @@ class MeghDrishtiApp {
                 <div class="section-card">
                     <div class="section-card-header">
                         <div class="section-card-title">
-                            <span>📜 Automated Meteorological Bulletin Generator</span>
+                            <span>📜 Illustrative Scenario Summary</span>
                         </div>
-                        <span class="mono badge-official">WMO / IMD STANDARD</span>
+                        <span class="mono badge-ai">NOT OFFICIAL</span>
                     </div>
                     <div style="background:#050b14; border:1px solid var(--border-subtle); padding:14px; border-radius:6px; font-family:'JetBrains Mono', monospace; font-size:0.75rem; color:#38bdf8; line-height:1.6; max-height:220px; overflow-y:auto; margin-top:12px;">
-                        SPECIAL METEOROLOGICAL DIRECTIVE // FLASH FLOOD & CONVECTIVE BULLETIN<br>
-                        ISSUED BY: MEGHDRISHTI AI OPERATIONS CENTER<br>
+                        NON-OFFICIAL DEMO OUTPUT // NOT A WEATHER WARNING<br>
+                        SOURCE: STATIC ILLUSTRATIVE VALUES<br>
                         LOCATION: ${data.snapshot.location.name.toUpperCase()} REGION<br>
                         TIME: ${new Date().toISOString()}<br>
                         ------------------------------------------------------------<br>
-                        DOPPLER WEATHER RADAR INDICATES PERSISTENT CONVECTIVE ECHOES EXCEEDING 52 DBZ OVER DRAINAGE BASINS. TOTAL 3-HOUR ACCUMULATIONS EXCEEDING 68 MM DETECTED. URBAN DRAINAGE CHOKE POINTS OPERATING AT CRITICAL CAPACITY. CIVIL PROTECTION AUTHORITIES DIRECTED TO ENFORCE PREVENTATIVE TRANSIT RESTRICTIONS ON LOW-LYING HIGHWAYS.
+                        Radar, rainfall, terrain, and model values are synthetic examples. No operational assessment or civil-protection directive is generated.
                     </div>
                 </div>
             </div>
@@ -1242,38 +1257,37 @@ class MeghDrishtiApp {
                 <div class="ops-kpi-card">
                     <span class="ops-kpi-lbl">Ingestion Runs</span>
                     <span class="ops-kpi-val">${observability.totalIngestionRuns}</span>
-                    <span class="ops-kpi-sub">100% Success Rate</span>
+                    <span class="ops-kpi-sub">No ingestion service connected</span>
                 </div>
                 <div class="ops-kpi-card">
                     <span class="ops-kpi-lbl">Provider Ingestion Latency</span>
-                    <span class="ops-kpi-val">${observability.avgLatencyMs} ms</span>
-                    <span class="ops-kpi-sub">Real-time edge ingestion</span>
+                    <span class="ops-kpi-val">${observability.avgLatencyMs ?? '--'}</span>
+                    <span class="ops-kpi-sub">No ingestion service connected</span>
                 </div>
                 <div class="ops-kpi-card">
                     <span class="ops-kpi-lbl">Sensor QC Flags</span>
-                    <span class="ops-kpi-val" style="color:#10b981;">168 GOOD</span>
-                    <span class="ops-kpi-sub">4 Stale • 0 Missing • 1 Suspect</span>
+                    <span class="ops-kpi-val" style="color:#10b981;">0 live sensors</span>
+                    <span class="ops-kpi-sub">Static demo values are not sensor QC</span>
                 </div>
                 <div class="ops-kpi-card">
                     <span class="ops-kpi-lbl">Operational Node</span>
-                    <span class="ops-kpi-val" style="font-size:1.15rem; color:var(--text-primary);">Node 04 (ISRO SAC)</span>
-                    <span class="ops-kpi-sub">High-Availability Failover Ready</span>
+                    <span class="ops-kpi-val" style="font-size:1.15rem; color:var(--text-primary);">Local demo</span>
+                    <span class="ops-kpi-sub">No operational node configured</span>
                 </div>
             </div>
 
             <div class="section-card" style="margin-top:16px;">
                 <div class="section-card-header">
                     <div class="section-card-title">
-                        <span>📋 Live Telemetry Audit Stream</span>
+                        <span>📋 Data Connections</span>
                     </div>
-                    <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">CONTINUOUS TELEMETRY LOG</span>
+                    <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">NO LOCAL BACKEND</span>
                 </div>
                 <div class="audit-stream-box">
-                    <div>[${new Date().toISOString()}] INGESTION_SUCCESS: Open-Meteo Synoptic API 200 OK (118ms)</div>
-                    <div>[${new Date().toISOString()}] RADAR_VOL_SCAN: DWR S-Band Colaba Sweep 0.5° Completed. Reflectivity range [5-56 dBZ].</div>
-                    <div>[${new Date().toISOString()}] SATELLITE_MOSDAC: INSAT-3DS TIR1 Cloud Top Brightness Temperature calibrated.</div>
-                    <div>[${new Date().toISOString()}] HYDRO_RUNOFF: Peak discharge updated to 412.5 m³/s across Mithi corridor.</div>
-                    <div>[${new Date().toISOString()}] CAP_BROADCAST: OASIS CAP v1.2 alert envelope validated and staged for NDMA Sachet.</div>
+                    <div>Weather and location search: Open-Meteo public API; no API key configured or required.</div>
+                    <div>Radar, satellite, AWS, NWP, inundation, and alert products: static demo examples.</div>
+                    <div>Firebase and Gemini are Android integrations; this web client does not call them.</div>
+                    <div>No project-owned API backend is configured.</div>
                 </div>
             </div>
         `;
@@ -1294,9 +1308,9 @@ class MeghDrishtiApp {
                 desc: oa.description
             })),
             ...alerts.aiEarlyWarnings.map(aw => ({
-                title: aw.headline,
+                title: `Demo scenario: ${aw.headline}`,
                 time: new Date(aw.provenance.timestamp).toLocaleTimeString(),
-                desc: `Risk Score: ${aw.riskScore} • Window: ${aw.timeWindow}`
+                desc: `Illustrative score: ${aw.riskScore} • Not an official warning`
             }))
         ];
 
@@ -1325,7 +1339,7 @@ class MeghDrishtiApp {
             weatherService.setDataMode(newMode);
             this.updateModeIndicators();
             this.loadWeatherForCurrentLocation();
-            this.showGlobalToast(`Data Mode switched to ${newMode.toUpperCase()}`, 'info');
+            this.showGlobalToast(`Weather source switched to ${newMode === DataMode.LIVE ? 'Open-Meteo' : 'local demo'}`, 'info');
         });
     }
 
@@ -1335,18 +1349,19 @@ class MeghDrishtiApp {
         const textEl = document.getElementById('mode-text');
         const sidebarStatus = document.getElementById('sidebar-mode-status');
 
-        if (mode === DataMode.LIVE) {
+        const isDemoWeather = mode === DataMode.DEMO || this.weatherData?.snapshot.isDemo === true;
+        if (!isDemoWeather) {
             if (btn) {
                 btn.className = 'mode-toggle-badge live';
-                if (textEl) textEl.textContent = 'LIVE DATA';
+                if (textEl) textEl.textContent = 'OPEN-METEO WEATHER';
             }
-            if (sidebarStatus) sidebarStatus.textContent = 'Mode: LIVE';
+            if (sidebarStatus) sidebarStatus.textContent = 'Weather: Open-Meteo';
         } else {
             if (btn) {
                 btn.className = 'mode-toggle-badge demo';
-                if (textEl) textEl.textContent = 'SIMULATED DEMO';
+                if (textEl) textEl.textContent = mode === DataMode.DEMO ? 'DEMO WEATHER' : 'DEMO FALLBACK';
             }
-            if (sidebarStatus) sidebarStatus.textContent = 'Mode: DEMO';
+            if (sidebarStatus) sidebarStatus.textContent = mode === DataMode.DEMO ? 'Weather: demo' : 'Weather: fallback demo';
         }
     }
 
@@ -1356,6 +1371,10 @@ class MeghDrishtiApp {
     initOrUpdateMap() {
         const mapEl = document.getElementById('leaflet-map-element');
         if (!mapEl) return;
+        if (!window.L) {
+            mapEl.textContent = 'Map library unavailable. Check the external Leaflet connection.';
+            return;
+        }
 
         const { lat, lon, name } = this.currentLocation;
 
@@ -1377,7 +1396,7 @@ class MeghDrishtiApp {
             this.mapLayerGroup.clearLayers();
 
             const marker = L.marker([lat, lon]).addTo(this.mapLayerGroup);
-            marker.bindPopup(`<b>${name}</b><br>MeghDrishti Mission Center`).openPopup();
+            marker.bindPopup(`<b>${name}</b><br>Illustrative demo location`).openPopup();
 
             // Flood polygon
             const floodPoly = L.polygon([
@@ -1424,7 +1443,7 @@ class MeghDrishtiApp {
                 }
 
                 dropdown.innerHTML = results.map(loc => `
-                    <div class="search-item" data-lat="${loc.lat}" data-lon="${loc.lon}" data-name="${loc.name}" data-country="${loc.country}" data-tz="${loc.timezone}">
+                    <div class="search-item" data-lat="${loc.lat}" data-lon="${loc.lon}" data-name="${loc.name}" data-region="${loc.region}" data-country="${loc.country}" data-tz="${loc.timezone}">
                         <div class="search-item-title">${loc.name}</div>
                         <div class="search-item-sub">${[loc.region, loc.country].filter(Boolean).join(', ')} • ${loc.timezone}</div>
                     </div>
@@ -1440,7 +1459,7 @@ class MeghDrishtiApp {
                         this.currentLocation = {
                             id: `loc-${Date.now()}`,
                             name: targetName,
-                            region: el.getAttribute('data-country'),
+                            region: el.getAttribute('data-region'),
                             country: el.getAttribute('data-country'),
                             lat: targetLat,
                             lon: targetLon,
@@ -1488,9 +1507,12 @@ class MeghDrishtiApp {
         const saveLocBtn = document.getElementById('btn-save-current-loc');
         if (saveLocBtn) {
             saveLocBtn.addEventListener('click', () => {
-                StorageService.addSavedLocation(this.currentLocation);
+                const savedLocation = StorageService.addSavedLocation(this.currentLocation);
                 this.renderSavedLocations();
-                this.showGlobalToast(`Saved ${this.currentLocation.name} to memory!`, 'success');
+                this.showGlobalToast(
+                    savedLocation ? `Saved ${this.currentLocation.name} locally.` : 'That location is already saved.',
+                    savedLocation ? 'success' : 'info'
+                );
             });
         }
     }
@@ -1499,12 +1521,17 @@ class MeghDrishtiApp {
      * Unit Switchers
      */
     setupUnitEvents() {
+        const preferences = StorageService.getPreferences();
+        document.querySelectorAll('.unit-opt').forEach(button => {
+            button.classList.toggle('active', button.dataset.unit === preferences.temperature);
+        });
+
         document.querySelectorAll('.unit-opt').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.unit-opt').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 const unit = btn.getAttribute('data-unit');
-                StorageService.savePreferences({ temperature: unit });
+                StorageService.setPreferences({ temperature: unit });
                 if (this.weatherData) this.renderDashboard(this.weatherData);
             });
         });
@@ -1519,10 +1546,11 @@ class MeghDrishtiApp {
             saveProfBtn.addEventListener('click', () => {
                 const user = StorageService.getUser() || {};
                 user.name = document.getElementById('setting-full-name').value;
+                user.full_name = user.name;
                 user.organization = document.getElementById('setting-org').value;
                 StorageService.setUser(user);
                 this.updateSidebarUserProfile();
-                this.showGlobalToast('Operational profile saved.', 'success');
+                this.showGlobalToast('Local demo profile saved.', 'success');
             });
         }
 
@@ -1534,6 +1562,24 @@ class MeghDrishtiApp {
                 this.loadWeatherForCurrentLocation();
             });
         }
+
+        const preferenceControls = [
+            ['pref-temp-select', 'temperature'],
+            ['pref-wind-select', 'windSpeed'],
+            ['pref-pressure-select', 'pressure'],
+            ['pref-precip-select', 'precipitation']
+        ];
+        preferenceControls.forEach(([elementId, preference]) => {
+            const select = document.getElementById(elementId);
+            if (!select) return;
+            select.addEventListener('change', () => {
+                StorageService.setPreferences({ [preference]: select.value });
+                if (this.weatherData) {
+                    this.renderDashboard(this.weatherData);
+                    this.renderForecastExtended(this.weatherData);
+                }
+            });
+        });
     }
 
     populateSettingsView() {
@@ -1542,7 +1588,7 @@ class MeghDrishtiApp {
             const nameEl = document.getElementById('setting-full-name');
             const emailEl = document.getElementById('setting-email');
             const orgEl = document.getElementById('setting-org');
-            if (nameEl) nameEl.value = user.name || '';
+            if (nameEl) nameEl.value = user.full_name || user.name || '';
             if (emailEl) emailEl.value = user.email || '';
             if (orgEl) orgEl.value = user.organization || '';
         }
@@ -1552,17 +1598,36 @@ class MeghDrishtiApp {
             modeSelect.value = weatherService.getDataMode();
         }
 
+        const preferences = StorageService.getPreferences();
+        [['pref-temp-select', 'temperature'], ['pref-wind-select', 'windSpeed'],
+            ['pref-pressure-select', 'pressure'], ['pref-precip-select', 'precipitation']]
+            .forEach(([elementId, preference]) => {
+                const select = document.getElementById(elementId);
+                if (select) select.value = preferences[preference];
+            });
+
         const savedContainer = document.getElementById('settings-saved-locations-list');
         if (savedContainer) {
             const list = StorageService.getSavedLocations();
             savedContainer.innerHTML = list.map(l => `
                 <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-slate-2); padding:10px 14px; border-radius:6px; margin-bottom:8px;">
                     <div>
-                        <strong>${l.name}</strong> • ${l.country || l.region} (${l.timezone})
+                        <strong>${l.name}</strong> • ${[l.region, l.country].filter(Boolean).join(', ')} (${l.timezone})
                     </div>
-                    <button class="btn-refresh" onclick="alert('Default location updated.')">Set Default</button>
+                    <button class="btn-refresh" data-default-location="${l.id}" ${l.isDefault ? 'disabled' : ''}>${l.isDefault ? 'Default' : 'Set Default'}</button>
                 </div>
             `).join('');
+
+            savedContainer.querySelectorAll('[data-default-location]').forEach(button => {
+                button.addEventListener('click', () => {
+                    StorageService.setDefaultLocation(button.dataset.defaultLocation);
+                    this.currentLocation = StorageService.getDefaultLocation();
+                    this.renderSavedLocations();
+                    this.populateSettingsView();
+                    this.loadWeatherForCurrentLocation();
+                    this.showGlobalToast(`${this.currentLocation.name} is now the default location.`, 'success');
+                });
+            });
         }
     }
 
@@ -1609,7 +1674,7 @@ class MeghDrishtiApp {
                     <div class="section-card-title">
                         <span>🧪 Thermodynamic Atmospheric Sounding</span>
                     </div>
-                    <span class="mono" style="color:var(--cyan-primary); font-size:0.75rem;">ISRO-SAC / IMD</span>
+                    <span class="mono badge-ai">DEMO EXAMPLES</span>
                 </div>
                 <div class="rainfall-accum-grid">
                     <div class="accum-item">
@@ -1648,26 +1713,26 @@ class MeghDrishtiApp {
             <div class="section-card">
                 <div class="section-card-header">
                     <div class="section-card-title">
-                        <span>📡 AWS Ground In-Situ Network</span>
+                        <span>📡 Ground-Station Demo Examples</span>
                     </div>
-                    <span class="mono badge-official">QC VALIDATED</span>
+                    <span class="mono badge-ai">NOT LIVE SENSOR DATA</span>
                 </div>
                 <div style="margin-top:14px; display:flex; flex-direction:column; gap:10px;">
                     <div style="display:flex; justify-content:space-between; background:var(--surface-slate-2); padding:10px 14px; border-radius:6px;">
                         <span>Surface Temperature Sensor</span>
-                        <strong class="mono" style="color:#10b981;">${groundObservations.surfaceTempC}°C (GOOD)</strong>
+                        <strong class="mono" style="color:#10b981;">${groundObservations.surfaceTempC}°C (DEMO)</strong>
                     </div>
                     <div style="display:flex; justify-content:space-between; background:var(--surface-slate-2); padding:10px 14px; border-radius:6px;">
                         <span>Tipping Bucket Rain Gauge</span>
-                        <strong class="mono" style="color:#10b981;">CALIBRATED (GOOD)</strong>
+                        <strong class="mono" style="color:#10b981;">SAMPLE VALUE</strong>
                     </div>
                     <div style="display:flex; justify-content:space-between; background:var(--surface-slate-2); padding:10px 14px; border-radius:6px;">
                         <span>Barometric Pressure Sensor</span>
-                        <strong class="mono" style="color:#10b981;">${groundObservations.barometricPressureHpa} hPa (GOOD)</strong>
+                        <strong class="mono" style="color:#10b981;">${groundObservations.barometricPressureHpa} hPa (DEMO)</strong>
                     </div>
                     <div style="display:flex; justify-content:space-between; background:var(--surface-slate-2); padding:10px 14px; border-radius:6px;">
                         <span>Ultrasonic Anemometer</span>
-                        <strong class="mono" style="color:#10b981;">${groundObservations.windSpeedKmh} km/h (GOOD)</strong>
+                        <strong class="mono" style="color:#10b981;">${groundObservations.windSpeedKmh} km/h (DEMO)</strong>
                     </div>
                 </div>
             </div>
@@ -1724,41 +1789,57 @@ class MeghDrishtiApp {
      * Auth & Session Events
      */
     setupAuthEvents() {
+        const showAuthMessage = (elementId, message, type = 'error') => {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            element.textContent = message;
+            element.className = `auth-alert-msg ${type}`;
+        };
+
         const formLogin = document.getElementById('form-login');
         if (formLogin) {
-            formLogin.addEventListener('submit', (e) => {
+            formLogin.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const email = document.getElementById('login-email').value;
                 const pwd = document.getElementById('login-password').value;
-                const res = AuthService.login(email, pwd);
-                if (res.success) {
-                    this.router.navigate('/dashboard');
-                } else {
-                    document.getElementById('login-alert').textContent = res.error;
-                    document.getElementById('login-alert').style.display = 'block';
+                try {
+                    await AuthService.login(email, pwd);
+                    const redirect = this.router.currentParams.redirect;
+                    if (redirect) {
+                        const redirectUrl = new URL(decodeURIComponent(redirect), window.location.origin);
+                        this.router.navigate(
+                            redirectUrl.pathname,
+                            Object.fromEntries(redirectUrl.searchParams.entries()),
+                            true
+                        );
+                    } else {
+                        this.router.navigate('/dashboard', {}, true);
+                    }
+                } catch (error) {
+                    showAuthMessage('login-alert', error.message || 'Sign-in failed.');
                 }
             });
         }
 
         const quickDemoBtn = document.getElementById('btn-quick-demo-login');
         if (quickDemoBtn) {
-            quickDemoBtn.addEventListener('click', () => {
-                AuthService.loginWithDemo();
-                this.router.navigate('/dashboard');
+            quickDemoBtn.addEventListener('click', async () => {
+                await AuthService.loginWithDemo();
+                this.router.navigate('/dashboard', {}, true);
             });
         }
 
         const googleLoginBtn = document.getElementById('btn-google-login');
         if (googleLoginBtn) {
-            googleLoginBtn.addEventListener('click', () => {
-                AuthService.loginWithGoogle();
-                this.router.navigate('/dashboard');
+            googleLoginBtn.addEventListener('click', async () => {
+                await AuthService.loginWithDemo();
+                this.router.navigate('/dashboard', {}, true);
             });
         }
 
         const formSignup = document.getElementById('form-signup');
         if (formSignup) {
-            formSignup.addEventListener('submit', (e) => {
+            formSignup.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const name = document.getElementById('signup-name').value;
                 const email = document.getElementById('signup-email').value;
@@ -1767,20 +1848,40 @@ class MeghDrishtiApp {
                 const confirm = document.getElementById('signup-confirm').value;
 
                 if (pwd !== confirm) {
-                    document.getElementById('signup-alert').textContent = 'Passwords do not match.';
-                    document.getElementById('signup-alert').style.display = 'block';
+                    showAuthMessage('signup-alert', 'Passwords do not match.');
                     return;
                 }
 
-                const res = AuthService.signup(name, email, pwd, org);
-                if (res.success) {
-                    this.router.navigate('/dashboard');
-                } else {
-                    document.getElementById('signup-alert').textContent = res.error;
-                    document.getElementById('signup-alert').style.display = 'block';
+                try {
+                    await AuthService.signup({ fullName: name, email, password: pwd, organization: org });
+                    this.router.navigate('/dashboard', {}, true);
+                } catch (error) {
+                    showAuthMessage('signup-alert', error.message || 'Profile creation failed.');
                 }
             });
         }
+
+        const formForgot = document.getElementById('form-forgot');
+        if (formForgot) {
+            formForgot.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                try {
+                    await AuthService.resetPassword(document.getElementById('forgot-email').value);
+                    showAuthMessage('forgot-alert', 'Demo account verified. This local app does not send email.', 'success');
+                } catch (error) {
+                    showAuthMessage('forgot-alert', error.message || 'Reset request failed.');
+                }
+            });
+        }
+
+        document.querySelectorAll('.btn-toggle-pwd').forEach(button => {
+            button.addEventListener('click', () => {
+                const input = document.getElementById(button.getAttribute('data-target'));
+                if (!input) return;
+                input.type = input.type === 'password' ? 'text' : 'password';
+                button.setAttribute('aria-label', input.type === 'password' ? 'Show password' : 'Hide password');
+            });
+        });
 
         const logoutBtn = document.getElementById('btn-logout');
         if (logoutBtn) {
@@ -1799,8 +1900,8 @@ class MeghDrishtiApp {
         const orgEl = document.getElementById('sidebar-user-org');
         const avatarEl = document.getElementById('sidebar-user-avatar');
 
-        if (nameEl) nameEl.textContent = user.name || 'Officer In-Charge';
-        if (orgEl) orgEl.textContent = user.organization || 'ISRO / IMD Meteorological Ops';
+        if (nameEl) nameEl.textContent = user.full_name || user.name || 'Demo Operator';
+        if (orgEl) orgEl.textContent = user.organization || 'Local demo profile';
         if (avatarEl) {
             avatarEl.src = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=0284c7&color=fff`;
         }

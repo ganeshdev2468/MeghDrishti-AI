@@ -29,7 +29,7 @@ class MeteorologicalSystemTest {
     @Test
     fun testGeoJsonExportFormat() {
         val scenarios = repository.generateInundationScenarios(100.0)
-        val geoJson = GisExportHelper.exportToGeoJson(scenarios, 18.9068, 72.8073)
+        val geoJson = GisExportHelper.exportToGeoJson(scenarios, 14.4426, 79.9865)
         assertTrue(geoJson.contains("FeatureCollection"))
         assertTrue(geoJson.contains("return_period_years"))
         assertTrue(geoJson.contains("EPSG::4326"))

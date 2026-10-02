@@ -1,9 +1,6 @@
 <resources>
     <string name="app_name">MeghDrishti AI</string>
-    <string name="app_subtitle">ISRO-IMD Integrated Heavy Rainfall \u0026 Early Warning System</string>
-    <string name="firestore_database_id">meghdrishti-emergency-db</string>
-    <string name="default_web_client_id">YOUR_WEB_CLIENT_ID_HERE</string>
-
+    <string name="app_subtitle">Weather and flood-risk scenario demo</string>
     <!-- Navigation -->
     <string name="nav_radar">Radar/Satellite</string>
     <string name="nav_inundation">Inundation</string>
@@ -19,10 +16,24 @@
     <string name="alert_extreme">EXTREME — Cloudburst</string>
 
     <!-- Stations -->
-    <string name="station_mumbai">Mumbai (Colaba Observatory)</string>
-    <string name="station_chennai">Chennai (Nungambakkam)</string>
-    <string name="station_wayanad">Wayanad (Kalpetta)</string>
-    <string name="station_guwahati">Guwahati (Borjhar)</string>
-    <string name="station_delhi">Delhi NCR (Safdarjung)</string>
-    <string name="station_uttarakhand">Uttarakhand (Dehradun)</string>
+    <string name="station_nellore">Nellore, Andhra Pradesh, India</string>
+    <string name="station_visakhapatnam">Visakhapatnam, Andhra Pradesh, India</string>
+    <string name="station_vijayawada">Vijayawada, Andhra Pradesh, India</string>
+    <string name="station_guntur">Guntur, Andhra Pradesh, India</string>
+    <string name="station_kurnool">Kurnool, Andhra Pradesh, India</string>
+    <string name="station_rajamahendravaram">Rajamahendravaram, Andhra Pradesh, India</string>
+    <string name="station_tirupati">Tirupati, Andhra Pradesh, India</string>
+    <string name="station_kakinada">Kakinada, Andhra Pradesh, India</string>
+    <string name="station_kadapa">Kadapa, Andhra Pradesh, India</string>
+    <string name="station_anantapuramu">Anantapuramu, Andhra Pradesh, India</string>
+    <string name="station_mangalagiri">Mangalagiri, Andhra Pradesh, India</string>
+    <string name="station_eluru">Eluru, Andhra Pradesh, India</string>
+    <string name="station_vizianagaram">Vizianagaram, Andhra Pradesh, India</string>
+    <string name="station_proddatur">Proddatur, Andhra Pradesh, India</string>
+    <string name="station_ongole">Ongole, Andhra Pradesh, India</string>
+    <string name="station_nandyal">Nandyal, Andhra Pradesh, India</string>
+    <string name="station_machilipatnam">Machilipatnam, Andhra Pradesh, India</string>
+    <string name="station_tenali">Tenali, Andhra Pradesh, India</string>
+    <string name="station_chittoor">Chittoor, Andhra Pradesh, India</string>
+    <string name="station_srikakulam">Srikakulam, Andhra Pradesh, India</string>
 </resources>

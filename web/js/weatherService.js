@@ -12,6 +12,7 @@ import {
     ProvenanceType,
     QualityStatus
 } from './providers/dataProviders.js';
+import { DEFAULT_LOCATIONS } from './storage.js';
 
 // WMO Weather Interpretation Codes
 const WMO_CODE_MAP = {
@@ -61,47 +62,19 @@ export class WeatherService {
         return this.dataMode;
     }
 
-    /**
-     * Search global locations using Open-Meteo Geocoding
-     */
+    /** Search the supported Andhra Pradesh locations. */
     async searchLocations(query) {
         if (!query || query.trim().length < 2) return [];
 
-        const cacheKey = `geo:${query.trim().toLowerCase()}`;
-        if (this.cache.has(cacheKey)) {
-            const cached = this.cache.get(cacheKey);
-            if (Date.now() - cached.timestamp < this.cacheTTL) {
-                return cached.data;
-            }
-        }
-
-        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query.trim())}&count=10&language=en&format=json`;
-
-        try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`Geocoding HTTP error ${res.status}`);
-            const data = await res.json();
-
-            if (!data.results || !data.results.length) return [];
-
-            const normalized = data.results.map(item => ({
-                id: `${item.latitude}_${item.longitude}`,
-                name: item.name,
-                region: item.admin1 || '',
-                country: item.country || '',
-                countryCode: item.country_code || '',
-                lat: item.latitude,
-                lon: item.longitude,
-                elevation: item.elevation || 0,
-                timezone: item.timezone || 'UTC'
+        const normalizedQuery = query.trim().toLowerCase();
+        return DEFAULT_LOCATIONS
+            .filter(location => `${location.name} ${location.region} ${location.country}`
+                .toLowerCase().includes(normalizedQuery))
+            .map(location => ({
+                ...location,
+                countryCode: 'IN',
+                elevation: 0
             }));
-
-            this.cache.set(cacheKey, { timestamp: Date.now(), data: normalized });
-            return normalized;
-        } catch (error) {
-            console.error('Location search failed:', error);
-            return [];
-        }
     }
 
     /**

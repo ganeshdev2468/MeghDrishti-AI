@@ -1,39 +1,28 @@
-# MeghDrishti AI (मेघदृष्टि)
-### ISRO-SAC & IMD Integrated Heavy Rainfall, Early Warning & Dynamic Inundation Prediction Platform
+# MeghDrishti AI
+### Android and static web demonstration for weather and flood-risk scenarios
 
 ---
 
-## 🛰️ Executive Overview
-**MeghDrishti AI** is a mission-critical meteorological forecasting and automated disaster response platform engineered to ISRO (Space Applications Centre - SAC) and IMD (India Meteorological Department) operational standards.
+## Project Status
+MeghDrishti contains a Kotlin/Jetpack Compose Android app and a static HTML/CSS/JavaScript dashboard. It is a local demonstration, not an operational ISRO/IMD system.
 
-The system integrates multi-source observational telemetry:
-1. **Doppler Weather Radar (DWR)**: S-band and C-band PPI sweep reflectivity (dBZ) with TITAN/SCIT meso-convective storm cell tracking vectors.
-2. **INSAT-3DR / INSAT-3DS Multi-Spectral Satellite Data**: Thermal Infrared (TIR1) cloud top brightness temperatures, water vapor flux, and Hydro-Estimator Quantitative Precipitation Estimation (QPE).
-3. **Multi-Model Numerical Weather Prediction (NWP) Ensemble**: Real-time comparative matrices across IMD High-Resolution WRF (3 km), NCMRWF NCUM (12 km), ECMWF HRES (9 km), and NOAA GFS (25 km) with thermodynamic convective potential (CAPE, CIN, PWAT, and cloudburst probability).
-4. **CartoDEM 10m Topographical Runoff & Hydrodynamic Inundation Modeling**: Animated elevation cross-section and dynamic 2D GIS flood extent mapping with multi-return period simulation ($T = 2, 5, 10, 25, 50, 100$ Years) and RFC 7946 GeoJSON export.
-5. **Tiered Disaster Escalation Engine**: Automated OASIS Common Alerting Protocol (CAP v1.2) XML broadcast generation for NDMA Sachet, cell broadcast towers, and civil defense siren networks.
-6. **ISRO/IMD Chief Meteorological Scientist AI**: Gemini-powered synoptic diagnosis and automated generation of formal WMO/IMD Special Weather Bulletins and Flash Flood Directives.
+The web client fetches weather forecasts from Open-Meteo and searches a predefined list of 20 Andhra Pradesh cities with Nellore as the default. A location-data version migration updates only saved locations in browser localStorage, preserving profiles, preferences, and other app data. Radar, satellite, ground-station, NWP, inundation, alert, and observability panels use illustrative demo values. No official warning feed, public alert broadcast, or project-owned API backend is connected. There is no service on port 8081 and no `/api/health` endpoint.
+
+The Android app fetches station weather from Open-Meteo and has Firebase and Gemini integrations, but the checked-in Firebase configuration is a placeholder. Other Android radar, satellite, NWP, and inundation data is simulated. Alerts are local drills only.
 
 ---
 
-## 🌐 Live Web Application & Dashboard
-A live, responsive web mission-control dashboard is running locally at:
-👉 **`http://localhost:8080/`**
+## Web Dashboard
+The dashboard is a static client-side application served by `serve.ps1`. Its app routes use URL hashes; missing files return HTTP 404.
 
-### Features on the Web Dashboard:
-- **Interactive PPI Doppler Radar Scope**: Continuous animated beam sweep with IMD standard dBZ reflectivity color scale (5–65+ dBZ) and TITAN storm cell velocity vectors.
-- **Precipitation Stress-Test Slider**: Interactive slider (10 to 250 mm/hr) dynamically modeling urban runoff, hydraulic head, underpass choke points, and flood water rise.
-- **Return Period Selector**: Instantly computes flood depth ($m$), flooded area ($\text{km}^2$), and peak runoff discharge ($Q = CIA\ \text{m}^3/\text{s}$).
-- **RFC 7946 GeoJSON Exporter**: One-click download of GIS flood polygons for direct import into QGIS, ArcGIS, or ISRO Bhuvan GIS.
-- **CAP Alert Dispatcher & Logistics Tracker**: Live monitoring of deployed NDRF battalions, rescue boats, dewatering pumps, and relief shelters.
-- **AI Scientist Terminal**: One-tap synthesis of real-time observations into formal meteorological bulletins.
+The browser makes direct requests to Open-Meteo's public forecast API using the selected city's coordinates; it does not use the geocoding API. Open-Meteo's forecast endpoint does not require an API key. Leaflet, OpenStreetMap tiles, fonts, and profile images are loaded from external hosts. All other weather products and warning/response examples are marked as demo data. Browser sign-in and profiles are local-only and are not production authentication.
 
 ---
 
 ## 📱 Android Application Architecture (Kotlin & Jetpack Compose)
 
 ```
-c:\yugha\
+.
 ├── app/
 │   ├── build.gradle.kts           # Compose, Room, Retrofit, Firebase, Gemini AI
 │   ├── google-services.json       # Firebase configuration
@@ -86,31 +75,56 @@ c:\yugha\
 │               └── MeteorologicalSystemTest.kt        # Unit tests
 ├── gradle/
 │   └── libs.versions.toml         # Version catalog
-├── web/                           # Standalone live web dashboard
+├── web/                           # Static dashboard; main entry is index.html
 │   ├── index.html
 │   ├── style.css
-│   └── app.js
+│   ├── app.js                     # Legacy, not loaded by index.html
+│   └── js/                        # Active browser modules
+│       ├── app.js
+│       ├── auth.js
+│       ├── router.js
+│       ├── storage.js
+│       ├── weatherService.js
+│       └── providers/dataProviders.js
 ├── build.gradle.kts
 ├── settings.gradle.kts
 ├── gradle.properties
 ├── firestore.rules
-└── serve.ps1                      # Built-in PowerShell HTTP server
+└── serve.ps1                      # Portable PowerShell HTTP server (default port 8080)
 ```
 
 ---
 
-## ⚡ How to Run
-### 1. Web Application:
-The dashboard is currently active at **`http://localhost:8080/`**.
-To restart the server at any time:
+## Run the Web Dashboard
+Clone the repository, then run the static server from its root in Windows PowerShell:
 ```powershell
-powershell -ExecutionPolicy Bypass -File c:\yugha\serve.ps1 -Port 8080
+git clone https://github.com/ganeshdev2468/MeghDrishti-AI.git
+cd MeghDrishti-AI
 ```
 
-### 2. Android Studio Build:
-Open `c:\yugha` in Android Studio (Ladybug or Hedgehog or newer).
-Gradle will sync automatically using the included `libs.versions.toml` version catalog.
-To run on an emulator or physical device:
-```bash
-./gradlew assembleDebug
+```powershell
+powershell -ExecutionPolicy Bypass -File .\serve.ps1
 ```
+Open <http://localhost:8080/>. The server defaults to port 8080 and serves `web/index.html`; pass `-Port <port>` to override it. No Node.js, npm, frontend build step, or backend is required.
+
+## Build the Android App
+Requirements: Android Studio, JDK 17, Android SDK 35, and a compatible Gradle installation (the project uses Android Gradle Plugin 8.10.1). This repository does not include the Gradle wrapper; from the repository root, use an installed Gradle:
+```powershell
+gradle :app:assembleDebug
+gradle :app:installDebug
+```
+Alternatively, open this repository in Android Studio and run the `app` configuration with a connected emulator/device.
+
+`app/google-services.json` contains placeholder values. Replace it with the configuration downloaded for your Firebase Android app before using Firebase Auth or Firestore. The Google Sign-In client ID is generated from that file. Firestore uses the default database and the collections `emergency_alerts`, `responder_profiles`, `deployment_logs`, and `inundation_scenarios`; deploy `firestore.rules` to your own Firebase project.
+
+Gemini is optional. Set `GEMINI_API_KEY` in the environment or as a Gradle project property before building. For example:
+```powershell
+$env:GEMINI_API_KEY = "your-development-key"
+gradle :app:assembleDebug
+```
+The key is compiled into the Android client and can be extracted from an APK. Use only a restricted development key; production use requires a protected service. Open-Meteo needs no API key.
+
+## Ports and Services
+- Web static server: `http://localhost:8080/` (default).
+- Backend/API server: none in this repository. Port 8081 and `/api/health` are not used or implemented.
+- Android Firebase and Gemini integrations are remote services, not local backend listeners.

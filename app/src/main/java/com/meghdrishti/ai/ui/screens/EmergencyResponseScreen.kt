@@ -33,7 +33,7 @@ fun EmergencyResponseScreen(
     val context = LocalContext.current
 
     val currentStation = state.stations.getOrNull(state.selectedStationIndex)
-    val stationName = currentStation?.name ?: "Mumbai (Colaba)"
+    val stationName = currentStation?.name ?: "Nellore, Andhra Pradesh, India"
 
     Column(
         modifier = modifier

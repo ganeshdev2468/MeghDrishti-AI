@@ -62,7 +62,7 @@ data class HourlyForecast(
  * Radar scan data representing a single DWR sweep.
  */
 data class RadarScanData(
-    val radarSite: String,             // e.g. "Mumbai S-band DWR"
+    val radarSite: String,
     val scanTime: String,
     val elevationAngle: Float,         // degrees
     val maxRange: Float,               // km

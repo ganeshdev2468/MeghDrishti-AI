@@ -43,14 +43,28 @@ class WeatherForecastRepository {
         .build()
         .create(OpenMeteoService::class.java)
 
-    // ── Indian Disaster Hotspot Stations ──
+    // ── Andhra Pradesh weather locations ──
     private val indianStations = listOf(
-        Triple("Mumbai (Colaba)", 18.9068, 72.8073),
-        Triple("Chennai (Nungambakkam)", 13.0674, 80.2376),
-        Triple("Wayanad (Kalpetta)", 11.6854, 76.0781),
-        Triple("Guwahati (Borjhar)", 26.1158, 91.5860),
-        Triple("Delhi NCR (Safdarjung)", 28.5844, 77.2088),
-        Triple("Uttarakhand (Dehradun)", 30.3165, 78.0322)
+        Triple("Nellore, Andhra Pradesh, India", 14.4426, 79.9865),
+        Triple("Visakhapatnam, Andhra Pradesh, India", 17.6868, 83.2185),
+        Triple("Vijayawada, Andhra Pradesh, India", 16.5062, 80.6480),
+        Triple("Guntur, Andhra Pradesh, India", 16.3067, 80.4365),
+        Triple("Kurnool, Andhra Pradesh, India", 15.8281, 78.0373),
+        Triple("Rajamahendravaram, Andhra Pradesh, India", 16.9891, 81.7840),
+        Triple("Tirupati, Andhra Pradesh, India", 13.6288, 79.4192),
+        Triple("Kakinada, Andhra Pradesh, India", 16.9891, 82.2475),
+        Triple("Kadapa, Andhra Pradesh, India", 14.4674, 78.8241),
+        Triple("Anantapuramu, Andhra Pradesh, India", 14.6819, 77.6006),
+        Triple("Mangalagiri, Andhra Pradesh, India", 16.4308, 80.5684),
+        Triple("Eluru, Andhra Pradesh, India", 16.7107, 81.0952),
+        Triple("Vizianagaram, Andhra Pradesh, India", 18.1067, 83.3956),
+        Triple("Proddatur, Andhra Pradesh, India", 14.7502, 78.5482),
+        Triple("Ongole, Andhra Pradesh, India", 15.5057, 80.0499),
+        Triple("Nandyal, Andhra Pradesh, India", 15.4786, 78.4836),
+        Triple("Machilipatnam, Andhra Pradesh, India", 16.1875, 81.1389),
+        Triple("Tenali, Andhra Pradesh, India", 16.2430, 80.6400),
+        Triple("Chittoor, Andhra Pradesh, India", 13.2172, 79.1003),
+        Triple("Srikakulam, Andhra Pradesh, India", 18.2949, 83.8938)
     )
 
     /**

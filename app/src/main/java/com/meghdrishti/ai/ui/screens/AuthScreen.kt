@@ -49,14 +49,14 @@ fun AuthScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "RESPONDER AUTHENTICATION",
+            text = "ACCOUNT SIGN-IN",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Black,
             color = CyanAccent
         )
 
         Text(
-            text = "ISRO & IMD Civil Defense Disaster Operations Gate",
+            text = "Optional Firebase sync for local alert drills",
             style = MaterialTheme.typography.bodySmall,
             color = TextSecondary
         )
@@ -84,7 +84,7 @@ fun AuthScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Authenticated Responder",
+                        text = "Signed-In Account",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -108,7 +108,7 @@ fun AuthScreen(
                     }
                 } else {
                     Text(
-                        text = "Sign in with your official responder credentials to sync alerts across devices via Firebase Cloud Firestore.",
+                        text = "Sign in with Google to sync drill records to your configured Firebase project. Firebase setup is required.",
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center

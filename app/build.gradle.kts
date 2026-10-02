@@ -6,6 +6,10 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+val geminiApiKey = providers.gradleProperty("GEMINI_API_KEY")
+    .orElse(providers.environmentVariable("GEMINI_API_KEY"))
+    .getOrElse("")
+
 android {
     namespace = "com.meghdrishti.ai"
     compileSdk = 35
@@ -18,8 +22,7 @@ android {
         versionName = "1.0.0-ISRO"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Gemini API key from local.properties or environment
-        buildConfigField("String", "GEMINI_API_KEY", "\"${project.findProperty("GEMINI_API_KEY") ?: ""}\"")
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
     }
 
     buildTypes {

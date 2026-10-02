@@ -32,7 +32,6 @@ export class Router {
         this.currentParams = {};
 
         window.addEventListener('popstate', () => this.handleLocationChange());
-        // Also support hash changes if needed
         window.addEventListener('hashchange', () => this.handleLocationChange());
     }
 
@@ -90,7 +89,7 @@ export class Router {
 
         const searchParams = new URLSearchParams(cleanQuery);
         const queryString = searchParams.toString() ? `?${searchParams.toString()}` : '';
-        const fullUrl = `${path}${queryString}`;
+        const fullUrl = `/#${path}${queryString}`;
 
         if (replace) {
             window.history.replaceState({}, '', fullUrl);
@@ -122,7 +121,8 @@ export class Router {
         if (AUTH_ROUTES.includes(path)) {
             if (!isAuth) {
                 // Save intended destination for post-login redirect
-                const returnUrl = encodeURIComponent(`${path}${window.location.search}`);
+                const returnQuery = new URLSearchParams(query).toString();
+                const returnUrl = encodeURIComponent(`${path}${returnQuery ? `?${returnQuery}` : ''}`);
                 this.navigate('/login', { redirect: returnUrl }, true);
                 return;
             }
@@ -132,8 +132,8 @@ export class Router {
         if (PUBLIC_ROUTES.includes(path)) {
             if (isAuth) {
                 // If user is already logged in, redirect away from login/signup to dashboard
-                const redirectTarget = query.redirect ? decodeURIComponent(query.redirect) : '/dashboard';
-                window.history.replaceState({}, '', redirectTarget);
+                const redirectTarget = query.redirect || '/dashboard';
+                window.history.replaceState({}, '', `/#${redirectTarget}`);
                 this.handleLocationChange();
                 return;
             }

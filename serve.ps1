@@ -1,7 +1,11 @@
 param(
-    [int]$Port = 8080,
-    [string]$Path = "c:\yugha\web"
+    [int]$Port = 8080
 )
+
+$WebRoot = [System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath "web"))
+if (-not (Test-Path -LiteralPath $WebRoot -PathType Container)) {
+    throw "Web directory not found: $WebRoot"
+}
 
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://localhost:$Port/")
@@ -15,11 +19,13 @@ try {
         $request = $context.Request
         $response = $context.Response
 
-        $relPath = $request.Url.LocalPath.TrimStart('/')
+        $relPath = [System.Uri]::UnescapeDataString($request.Url.AbsolutePath.TrimStart('/'))
         if ([string]::IsNullOrWhiteSpace($relPath)) { $relPath = "index.html" }
-        $fullPath = Join-Path $Path $relPath
+        $fullPath = [System.IO.Path]::GetFullPath((Join-Path -Path $WebRoot -ChildPath $relPath))
+        $webRootPrefix = $WebRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
 
-        if (Test-Path $fullPath -PathType Leaf) {
+        if ($fullPath.StartsWith($webRootPrefix, [System.StringComparison]::OrdinalIgnoreCase) -and
+            (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
             $bytes = [System.IO.File]::ReadAllBytes($fullPath)
             $ext = [System.IO.Path]::GetExtension($fullPath).ToLower()
             $mime = switch ($ext) {
@@ -36,19 +42,11 @@ try {
             $response.ContentLength64 = $bytes.Length
             $response.OutputStream.Write($bytes, 0, $bytes.Length)
         } else {
-            # SPA Fallback: Serve index.html for application routes
-            $spaIndex = Join-Path $Path "index.html"
-            if (Test-Path $spaIndex -PathType Leaf) {
-                $bytes = [System.IO.File]::ReadAllBytes($spaIndex)
-                $response.StatusCode = 200
-                $response.ContentType = "text/html; charset=utf-8"
-                $response.ContentLength64 = $bytes.Length
-                $response.OutputStream.Write($bytes, 0, $bytes.Length)
-            } else {
-                $response.StatusCode = 404
-                $msg = [System.Text.Encoding]::UTF8.GetBytes("404 Not Found")
-                $response.OutputStream.Write($msg, 0, $msg.Length)
-            }
+            $response.StatusCode = 404
+            $response.ContentType = "text/plain; charset=utf-8"
+            $bytes = [System.Text.Encoding]::UTF8.GetBytes("404 Not Found")
+            $response.ContentLength64 = $bytes.Length
+            $response.OutputStream.Write($bytes, 0, $bytes.Length)
         }
         $response.Close()
     }

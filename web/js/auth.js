@@ -1,34 +1,11 @@
 /**
  * Authentication Service for MeghDrishti AI
- * Supports email/password, Google OAuth, session persistence,
- * registration with password strength, and demo credentials.
+ * Browser-local demo profiles and session persistence; this is not production auth.
  */
 
 import { StorageService } from './storage.js';
 
-// Pre-seeded primary operator account
-const DEMO_USER = {
-    id: 'usr-isro-001',
-    full_name: 'Dr. Anand Sharma',
-    email: 'dr.sharma@isro.gov.in',
-    password: 'MeghDrishti2026!',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
-    country: 'India',
-    organization: 'ISRO Space Applications Centre',
-    timezone: 'Asia/Kolkata',
-    preferred_units: 'metric',
-    created_at: '2026-01-15T08:00:00Z',
-    updated_at: '2026-10-01T12:00:00Z'
-};
-
 export const AuthService = {
-    init() {
-        // Ensure default user exists in registered database
-        if (!StorageService.findUserByEmail(DEMO_USER.email)) {
-            StorageService.saveRegisteredUser(DEMO_USER);
-        }
-    },
-
     getCurrentUser() {
         return StorageService.getUser();
     },
@@ -102,28 +79,25 @@ export const AuthService = {
         return sessionUser;
     },
 
-    /**
-     * Google OAuth Simulation
-     */
-    async loginWithGoogle() {
+    /** Local-only demo sign-in; this is not Google OAuth. */
+    async loginWithDemo() {
         await this.delay(500);
 
-        const googleUser = {
-            id: 'usr-google-' + Date.now(),
-            full_name: 'ISRO Field Scientist',
-            email: 'scientist.isro@gmail.com',
-            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
+        const demoUser = {
+            id: 'usr-demo-' + Date.now(),
+            full_name: 'Demo Operator',
+            email: 'demo@example.invalid',
+            avatar: '',
             country: 'India',
-            organization: 'National Remote Sensing Centre',
+            organization: 'Local demo profile',
             timezone: 'Asia/Kolkata',
             preferred_units: 'metric',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         };
 
-        StorageService.saveRegisteredUser({ ...googleUser, password: 'OAuthProviderUser' });
-        StorageService.setUser(googleUser);
-        return googleUser;
+        StorageService.setUser(demoUser);
+        return demoUser;
     },
 
     /**
@@ -167,5 +141,3 @@ export const AuthService = {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 };
-
-AuthService.init();

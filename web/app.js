@@ -2,14 +2,14 @@
    MeghDrishti AI — ISRO/IMD Operational Web Application Logic
    ═══════════════════════════════════════════════════════════ */
 
-// ── Station Telemetry Data ──
+// ── Legacy illustrative station telemetry data ──
 const STATIONS = [
-    { name: "Mumbai (Colaba DWR)", lat: 18.9068, lon: 72.8073, precip: 85.4, wind: "34 km/h (WSW)", press: 998.4, temp: 27.8, hum: 94, alert: "ORANGE" },
-    { name: "Chennai (Nungambakkam DWR)", lat: 13.0674, lon: 80.2376, precip: 24.2, wind: "18 km/h (NE)", press: 1004.1, temp: 31.2, hum: 82, alert: "YELLOW" },
-    { name: "Wayanad (Kalpetta Ghats)", lat: 11.6854, lon: 76.0781, precip: 142.8, wind: "48 km/h (SW)", press: 992.6, temp: 21.4, hum: 98, alert: "RED" },
-    { name: "Guwahati (Borjhar Radar)", lat: 26.1158, lon: 91.5860, precip: 38.6, wind: "22 km/h (SE)", press: 1001.2, temp: 29.5, hum: 88, alert: "YELLOW" },
-    { name: "Delhi NCR (Safdarjung)", lat: 28.5844, lon: 77.2088, precip: 12.0, wind: "14 km/h (NW)", press: 1008.3, temp: 33.1, hum: 68, alert: "GREEN" },
-    { name: "Uttarakhand (Dehradun DWR)", lat: 30.3165, lon: 78.0322, precip: 185.0, wind: "52 km/h (N)", press: 989.1, temp: 19.8, hum: 99, alert: "RED" }
+    { name: "Nellore", lat: 14.4426, lon: 79.9865, precip: 85.4, wind: "34 km/h (WSW)", press: 998.4, temp: 27.8, hum: 94, alert: "ORANGE" },
+    { name: "Visakhapatnam", lat: 17.6868, lon: 83.2185, precip: 24.2, wind: "18 km/h (NE)", press: 1004.1, temp: 31.2, hum: 82, alert: "YELLOW" },
+    { name: "Vijayawada", lat: 16.5062, lon: 80.6480, precip: 142.8, wind: "48 km/h (SW)", press: 992.6, temp: 21.4, hum: 98, alert: "RED" },
+    { name: "Guntur", lat: 16.3067, lon: 80.4365, precip: 38.6, wind: "22 km/h (SE)", press: 1001.2, temp: 29.5, hum: 88, alert: "YELLOW" },
+    { name: "Kurnool", lat: 15.8281, lon: 78.0373, precip: 12.0, wind: "14 km/h (NW)", press: 1008.3, temp: 33.1, hum: 68, alert: "GREEN" },
+    { name: "Rajamahendravaram", lat: 16.9891, lon: 81.7840, precip: 185.0, wind: "52 km/h (N)", press: 989.1, temp: 19.8, hum: 99, alert: "RED" }
 ];
 
 let activeStationIndex = 0;
@@ -452,8 +452,8 @@ NWP_MODELS.forEach(m => {
 // ── Alert Dispatch & Audit Log ──
 const auditTbody = document.getElementById('audit-log-body');
 let auditLogs = [
-    { level: "RED", time: "17:45 IST", loc: "Mumbai (Colaba)", stats: "145 mm/hr | 1.85m", msg: "Immediate evacuation ordered for Gandhi Market lowlands", status: "ACKNOWLEDGED" },
-    { level: "ORANGE", time: "16:30 IST", loc: "Wayanad (Kalpetta)", stats: "92 mm/hr | 1.10m", msg: "Debris flow & flash flood warning across tea estate valleys", status: "DISPATCHED" }
+    { level: "RED", time: "17:45 IST", loc: "Nellore, Andhra Pradesh, India", stats: "145 mm/hr | 1.85m", msg: "Illustrative evacuation scenario for low-lying urban areas", status: "ACKNOWLEDGED" },
+    { level: "ORANGE", time: "16:30 IST", loc: "Visakhapatnam, Andhra Pradesh, India", stats: "92 mm/hr | 1.10m", msg: "Illustrative flash-flood scenario for low-lying areas", status: "DISPATCHED" }
 ];
 
 function renderAuditLogs() {

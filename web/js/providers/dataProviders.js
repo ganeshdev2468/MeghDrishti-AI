@@ -10,6 +10,8 @@
  *    MODEL OUTPUT, AI/ML ESTIMATE, SIMULATION/DEMO.
  */
 
+import { DEFAULT_LOCATIONS } from '../storage.js';
+
 export const ProvenanceType = {
     OBSERVATION: 'OBSERVATION',
     ANALYSIS: 'ANALYSIS',
@@ -89,16 +91,17 @@ export class WeatherDataProvider {
                     isDemo: false,
                     raw: data,
                     provenance: new ProvenanceRecord({
-                        source: 'Open-Meteo Synoptic API / WMO In-situ Network',
+                        source: 'Open-Meteo Forecast API',
                         timestamp: nowIso,
                         validTime: data.current?.time ? `${data.current.time}:00Z` : nowIso,
-                        spatialResolution: '1.0 km - 5.0 km downscaled',
-                        temporalResolution: '15 min - 1 hour',
+                        spatialResolution: 'Provider-dependent grid',
+                        temporalResolution: 'Provider-dependent forecast step',
                         latitude: lat,
                         longitude: lon,
                         quality: QualityStatus.GOOD,
-                        processingLevel: 'L3 Analyzed Synoptic',
-                        provenanceType: ProvenanceType.OBSERVATION
+                        processingLevel: 'Open-Meteo API response',
+                        provenanceType: ProvenanceType.FORECAST,
+                        notes: 'Third-party forecast data; not an official IMD observation feed.'
                     })
                 };
             } catch (err) {
@@ -217,12 +220,12 @@ export class SatelliteDataProvider {
         ];
 
         return {
-            satellite: satelliteName,
+            satellite: `${satelliteName} (demo example)`,
             sensor: 'Advanced Imager (IMAGER) & 19-Channel Sounder',
             coverage: isIndia ? 'Indian Subcontinent & Northern Indian Ocean' : 'Global Tropical Belt',
             channels,
             provenance: new ProvenanceRecord({
-                source: isIndia ? 'ISRO MOSDAC / IMD Satellite Division' : 'EUMETSAT / NOAA NESDIS',
+                source: 'Static demo example; no satellite provider connected',
                 timestamp: timestamp,
                 validTime: timestamp,
                 spatialResolution: '1.0 km (VIS) to 4.0 km (TIR1/WV)',
@@ -231,8 +234,8 @@ export class SatelliteDataProvider {
                 longitude: lon,
                 quality: QualityStatus.GOOD,
                 processingLevel: 'L2G / L3 Science Calibrated',
-                provenanceType: this.mode === DataMode.LIVE ? ProvenanceType.OBSERVATION : ProvenanceType.SIMULATION_DEMO,
-                notes: this.mode === DataMode.LIVE ? 'Operational telemetry feed.' : 'Calibrated simulation scenario.'
+                provenanceType: ProvenanceType.SIMULATION_DEMO,
+                notes: 'Static illustrative product; no satellite feed is connected.'
             })
         };
     }
@@ -246,16 +249,12 @@ export class RadarDataProvider {
 
     async getRadarTelemetry(lat, lon) {
         const timestamp = new Date().toISOString();
-        // Closest radar lookup (e.g. Mumbai Colaba, Veravali, Delhi, Chennai, etc.)
-        const radarStations = [
-            { name: 'Mumbai Colaba (S-Band DWR)', lat: 18.89, lon: 72.81, maxRangeKm: 250 },
-            { name: 'Mumbai Veravali (C-Band DWR)', lat: 19.12, lon: 72.87, maxRangeKm: 250 },
-            { name: 'Delhi Palam (S-Band DWR)', lat: 28.56, lon: 77.10, maxRangeKm: 250 },
-            { name: 'Chennai Port (S-Band DWR)', lat: 13.08, lon: 80.29, maxRangeKm: 250 },
-            { name: 'Bengaluru IMD (C-Band DWR)', lat: 12.96, lon: 77.58, maxRangeKm: 250 },
-            { name: 'Kolkata DWR (S-Band)', lat: 22.57, lon: 88.36, maxRangeKm: 250 },
-            { name: 'Hyderabad Begumpet (C-Band DWR)', lat: 17.44, lon: 78.47, maxRangeKm: 250 }
-        ];
+        const radarStations = DEFAULT_LOCATIONS.map(location => ({
+            name: location.name,
+            lat: location.lat,
+            lon: location.lon,
+            maxRangeKm: 250
+        }));
 
         let nearest = radarStations[0];
         let minDist = 999999;
@@ -272,7 +271,7 @@ export class RadarDataProvider {
         const rainRate = Math.pow(10, (maxReflectivity - 16) / 16); // Marshall-Palmer Z-R relation: Z = 200 * R^1.6
 
         return {
-            stationName: nearest.name,
+            stationName: `${nearest.name} (demo example)`,
             distanceKm: Math.round(minDist),
             sweepAngle: '0.5° PPI Elevation Scan',
             maxReflectivityDbz: parseFloat(maxReflectivity.toFixed(1)),
@@ -283,7 +282,7 @@ export class RadarDataProvider {
             vilKgM2: 48.2, // Vertically Integrated Liquid
             stormCellsDetected: 3,
             provenance: new ProvenanceRecord({
-                source: `IMD Radar Network — ${nearest.name}`,
+                source: `Synthetic radar scenario near ${nearest.name}`,
                 timestamp: timestamp,
                 validTime: timestamp,
                 spatialResolution: '250 m bin length, 1.0° azimuth',
@@ -292,8 +291,8 @@ export class RadarDataProvider {
                 longitude: nearest.lon,
                 quality: minDist < 250 ? QualityStatus.GOOD : QualityStatus.SUSPECT,
                 processingLevel: 'L2 Polarimetric QC Refined',
-                provenanceType: this.mode === DataMode.LIVE ? ProvenanceType.OBSERVATION : ProvenanceType.SIMULATION_DEMO,
-                notes: minDist > 250 ? 'Location beyond 250 km radar beam cutoff; attenuated.' : 'Full volume coverage.'
+                provenanceType: ProvenanceType.SIMULATION_DEMO,
+                notes: 'Synthetic radar values; no IMD radar feed is connected.'
             })
         };
     }
@@ -308,7 +307,7 @@ export class ObservationProvider {
     async getGroundObservations(lat, lon) {
         const timestamp = new Date().toISOString();
         return {
-            network: 'IMD-AWS / CPCB / WMO Global Surface Synoptic Network',
+            network: 'Synthetic ground-observation examples',
             stationId: `AWS-${Math.abs(Math.round(lat * 100))}-${Math.abs(Math.round(lon * 100))}`,
             surfaceTempC: 27.8,
             relativeHumidity: 88,
@@ -330,7 +329,7 @@ export class ObservationProvider {
                 wind: QualityStatus.GOOD
             },
             provenance: new ProvenanceRecord({
-                source: 'Ministry of Earth Sciences (MoES) / IMD AWS Telemetry',
+                source: 'MeghDrishti static ground-station demo',
                 timestamp: timestamp,
                 validTime: timestamp,
                 spatialResolution: 'Point In-Situ Observation',
@@ -339,7 +338,8 @@ export class ObservationProvider {
                 longitude: lon,
                 quality: QualityStatus.GOOD,
                 processingLevel: 'L1 Quality Controlled In-Situ',
-                provenanceType: ProvenanceType.OBSERVATION
+                provenanceType: ProvenanceType.SIMULATION_DEMO,
+                notes: 'Static example values; no AWS/ARG telemetry is connected.'
             })
         };
     }
@@ -438,7 +438,7 @@ export class NWPProvider {
             models,
             synopticDiagnosis: 'High atmospheric moisture column (PWAT > 58 mm) coupled with strong convective instability (CAPE > 2500 J/kg) indicates high likelihood of mesoscale convective cloudburst formation along coastal or orographic boundaries.',
             provenance: new ProvenanceRecord({
-                source: 'Multi-Agency NWP Feeds (IMD, NCMRWF, ECMWF, NOAA)',
+                source: 'MeghDrishti static NWP scenario examples',
                 timestamp: now.toISOString(),
                 validTime: validTime,
                 spatialResolution: '3 km to 25 km multi-grid',
@@ -447,8 +447,8 @@ export class NWPProvider {
                 longitude: lon,
                 quality: QualityStatus.GOOD,
                 processingLevel: 'L4 Post-Processed Model Output',
-                provenanceType: ProvenanceType.MODEL_OUTPUT,
-                notes: 'Scientific numerical prediction guidance. Does not represent in-situ observations.'
+                provenanceType: ProvenanceType.SIMULATION_DEMO,
+                notes: 'Illustrative values only; no named-agency model feeds are connected.'
             })
         };
     }
@@ -472,7 +472,7 @@ export class HydrologyTerrainProvider {
                 { name: 'Main Storm Outfall Sluice', depthEstM: 2.10, status: 'Tidal Lock Choke' }
             ],
             provenance: new ProvenanceRecord({
-                source: 'CartoDEM 10m Elevation & NRSC Bhuvan Hydrological Atlas',
+                source: 'MeghDrishti synthetic terrain and runoff scenario',
                 timestamp: timestamp,
                 validTime: timestamp,
                 spatialResolution: '10m CartoDEM spatial grid',
@@ -481,7 +481,8 @@ export class HydrologyTerrainProvider {
                 longitude: lon,
                 quality: QualityStatus.GOOD,
                 processingLevel: 'L3 Hydrodynamic GIS Grid',
-                provenanceType: ProvenanceType.ANALYSIS
+                provenanceType: ProvenanceType.SIMULATION_DEMO,
+                notes: 'Illustrative terrain and runoff values; no DEM or hydrology feed is connected.'
             })
         };
     }
@@ -493,45 +494,18 @@ export class AlertProvider {
         this.mode = mode;
     }
 
-    async getAlerts(lat, lon, locationName = 'Mumbai') {
+    async getAlerts(lat, lon, locationName = 'Nellore') {
         const now = new Date();
         const validUntil = new Date(now.getTime() + 6 * 3600 * 1000).toISOString();
 
         return {
-            officialAlerts: [
-                {
-                    id: 'IMD-WARN-2026-0814',
-                    category: 'OFFICIAL WARNING',
-                    issuer: 'India Meteorological Department (IMD) / National Disaster Management Authority (NDMA)',
-                    headline: `IMD RED ALERT: Extremely Heavy Rainfall & Convective Storm Warning for ${locationName}`,
-                    severity: 'Extreme',
-                    urgency: 'Immediate',
-                    certainty: 'Observed / Highly Likely',
-                    effective: now.toISOString(),
-                    expires: validUntil,
-                    description: `Extremely heavy rainfall (> 204.4 mm in 24 hours) with isolated squally winds gusting up to 65 km/h expected in ${locationName} and adjoining districts. Localized severe waterlogging and flash flooding likely.`,
-                    instruction: 'Stay indoors. Avoid low-lying underpasses and waterlogged corridors. Keep emergency supplies ready. Follow municipal disaster authority instructions.',
-                    provenance: new ProvenanceRecord({
-                        source: 'IMD Central Disaster Warning Division / OASIS CAP v1.2',
-                        timestamp: now.toISOString(),
-                        validTime: validUntil,
-                        spatialResolution: 'District Warning Polygon',
-                        temporalResolution: 'Official 3-hour synoptic issuance',
-                        latitude: lat,
-                        longitude: lon,
-                        quality: QualityStatus.GOOD,
-                        processingLevel: 'L4 Official Bulletin',
-                        provenanceType: ProvenanceType.OBSERVATION,
-                        notes: 'Official Government Warning broadcast.'
-                    })
-                }
-            ],
+            officialAlerts: [],
             aiEarlyWarnings: [
                 {
                     id: 'MD-AI-EW-902',
-                    category: 'MEGHDRISHTI AI RISK ASSESSMENT',
-                    engine: 'MeghDrishti ConvLSTM Hydro-Convective AI v2.4',
-                    headline: `AI EARLY WARNING: High Probability Urban Inundation (Risk Score 88/100) in ${locationName}`,
+                    category: 'SIMULATED SCENARIO',
+                    engine: 'Static MeghDrishti demo values',
+                    headline: `Illustrative flood-risk scenario for ${locationName}`,
                     riskLevel: 'VERY HIGH',
                     riskScore: 88,
                     confidence: '84% (Uncertainty ±6 mm/hr)',
@@ -545,7 +519,7 @@ export class AlertProvider {
                         'Forecast convergence line indicating persistent convective cell stagnation'
                     ],
                     provenance: new ProvenanceRecord({
-                        source: 'MeghDrishti Hydro-Convective Machine Learning Model v2.4',
+                        source: 'MeghDrishti static scenario example',
                         timestamp: now.toISOString(),
                         validTime: validUntil,
                         spatialResolution: '500m Urban Cell Grid',
@@ -554,31 +528,31 @@ export class AlertProvider {
                         longitude: lon,
                         quality: QualityStatus.GOOD,
                         processingLevel: 'L4 AI Derived Inundation Risk',
-                        provenanceType: ProvenanceType.AIML_ESTIMATE,
-                        modelVersion: 'convlstm-urban-flood-v2.4',
-                        notes: 'AI Risk Assessment model output. Not an authorized government directive.'
+                        provenanceType: ProvenanceType.SIMULATION_DEMO,
+                        modelVersion: null,
+                        notes: 'Illustrative static values; not an AI model result or government warning.'
                     })
                 }
             ],
             operatorAlerts: [
                 {
                     id: 'OPS-INC-401',
-                    category: 'INTERNAL OPERATOR ALERT',
+                    category: 'LOCAL DEMO SCENARIO',
                     priority: 'CRITICAL',
                     sector: 'Municipal Storm Drainage & Traffic Transit',
                     summary: 'Pumping Station Choke Point #3 operating at 95% capacity. Sluice gates open for low-tide gravity outflow.',
                     status: 'INVESTIGATING', // ACKNOWLEDGED, INVESTIGATING, DISPATCHED, RESOLVED
-                    assignedTeam: 'NDRF Unit 4 & Municipal Dewatering Crew',
+                    assignedTeam: 'Sample team; no dispatch',
                     timestamp: now.toISOString()
                 },
                 {
                     id: 'OPS-INC-402',
-                    category: 'INTERNAL OPERATOR ALERT',
+                    category: 'LOCAL DEMO SCENARIO',
                     priority: 'HIGH',
                     sector: 'Railway Overhead Power & Track Submersion',
                     summary: 'Water level at low-line railway track reached 180 mm above sleeper level. Speed restriction 15 km/h enforced.',
                     status: 'DISPATCHED',
-                    assignedTeam: 'Transit Emergency Response Team Delta',
+                    assignedTeam: 'Sample team; no dispatch',
                     timestamp: now.toISOString()
                 }
             ]
@@ -616,7 +590,7 @@ export class RainfallNowcastEngine {
             currentRateMmHr: baseRate,
             nowcastSteps: steps,
             provenance: new ProvenanceRecord({
-                source: 'MeghDrishti Optical Flow & Semi-Lagrangian Advection Nowcaster',
+                source: 'MeghDrishti illustrative nowcast scenario',
                 timestamp: new Date().toISOString(),
                 validTime: new Date(Date.now() + 180 * 60 * 1000).toISOString(),
                 spatialResolution: '1.0 km nowcasting grid',
@@ -625,9 +599,9 @@ export class RainfallNowcastEngine {
                 longitude: lon,
                 quality: QualityStatus.GOOD,
                 processingLevel: 'L3 Nowcast Product',
-                provenanceType: ProvenanceType.NOWCAST,
-                modelVersion: 'lagrangian-titan-nowcast-v1.8',
-                notes: 'Short-term advection extrapolation with uncertainty intervals.'
+                provenanceType: ProvenanceType.SIMULATION_DEMO,
+                modelVersion: null,
+                notes: 'Illustrative multipliers; no radar motion vectors or nowcast model are connected.'
             })
         };
     }
@@ -648,17 +622,17 @@ export class MeghDrishtiDataCoordinator {
         
         // Observability Metrics
         this.observability = {
-            totalIngestionRuns: 42,
-            successfulRuns: 42,
+            totalIngestionRuns: 0,
+            successfulRuns: 0,
             failedRuns: 0,
-            avgLatencyMs: 142,
+            avgLatencyMs: null,
             qcSummary: {
-                goodCount: 168,
-                staleCount: 4,
+                goodCount: 0,
+                staleCount: 0,
                 missingCount: 0,
-                suspectCount: 1
+                suspectCount: 0
             },
-            activeNode: 'ISRO-SAC / IMD Cloud Ops Gateway - Node 04'
+            activeNode: 'Local demo; no ingestion service connected'
         };
     }
 

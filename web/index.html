@@ -41,9 +41,9 @@
             </div>
 
             <div class="hero-center">
-                <h2 class="hero-title">Integrated heavy rainfall, radar, satellite & urban flood prediction.</h2>
+                <h2 class="hero-title">Weather forecasts and flood-risk scenarios.</h2>
                 <p class="hero-desc">
-                    Mission-critical meteorological operations platform fusing Doppler weather radar, INSAT-3DS multi-spectral satellite imagery, multi-model numerical prediction (NWP), and hydrodynamic inundation risk models.
+                    A local demonstration dashboard. Open-Meteo provides forecast weather; radar, satellite, model, flood, and alert panels use illustrative values.
                 </p>
                 
                 <div class="hero-features">
@@ -57,13 +57,13 @@
                     </div>
                     <div class="hero-feat-item">
                         <span class="feat-dot"></span>
-                        <span>CartoDEM Hydrodynamic Inundation Modeling & OASIS CAP v1.2 Alerts</span>
+                        <span>Illustrative flood scenarios & local alert drills</span>
                     </div>
                 </div>
             </div>
 
             <div class="hero-telemetry-badge">
-                <div class="mono">SYSTEM: OPERATIONAL • NODE 04 (ISRO/IMD)</div>
+                <div class="mono">SYSTEM: LOCAL DEMO • NO AGENCY BACKEND</div>
                 <div class="mono" id="auth-live-time">00:00:00 UTC</div>
             </div>
         </div>
@@ -74,21 +74,23 @@
             <!-- 1. LOGIN CARD -->
             <div id="auth-view-login" class="auth-form-card" style="display:none;">
                 <div class="auth-card-header">
-                    <h3 class="auth-card-title">Operations Sign In</h3>
-                    <p class="auth-card-subtitle">Access MeghDrishti Meteorological Operations Center</p>
+                    <h3 class="auth-card-title">Local Demo Sign In</h3>
+                    <p class="auth-card-subtitle">Demo profile only. This app has no production authentication service.</p>
                 </div>
 
-                <div id="login-alert" class="auth-alert-msg error"></div>
+                <p class="auth-demo-note">Do not enter real passwords or agency credentials. Sign-up data is stored in this browser only.</p>
+
+                <div id="login-alert" class="auth-alert-msg"></div>
 
                 <form id="form-login" class="auth-form">
                     <div class="form-group">
-                        <label class="form-label" for="login-email">Official Responder Email</label>
-                        <input type="email" id="login-email" class="form-input" placeholder="officer@disaster.gov.in" required>
+                        <label class="form-label" for="login-email">Demo profile email</label>
+                        <input type="email" id="login-email" class="form-input" placeholder="demo@example.invalid" required>
                     </div>
 
                     <div class="form-group">
                         <div class="form-label">
-                            <label for="login-password">Password</label>
+                            <label for="login-password">Demo password</label>
                             <a href="#/forgot-password" class="auth-nav-link" style="color:var(--cyan-primary); text-decoration:none;">Forgot password?</a>
                         </div>
                         <div class="form-input-wrap">
@@ -98,11 +100,11 @@
                     </div>
 
                     <button type="submit" id="btn-login-submit" class="btn-primary">
-                        <span>Sign In to Mission Control</span>
+                        <span>Sign In to Local Demo</span>
                     </button>
 
                     <button type="button" id="btn-quick-demo-login" class="btn-demo-quick">
-                        ⚡ Quick Demo Access (ISRO SAC / IMD Responder)
+                        ⚡ Quick Local Demo Access
                     </button>
 
                     <div class="auth-divider">
@@ -116,7 +118,7 @@
                             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                         </svg>
-                        <span>Continue with Official Google ID</span>
+                        <span>Continue as Demo Operator (local only)</span>
                     </button>
 
                     <p class="auth-switch-text">
@@ -128,11 +130,11 @@
             <!-- 2. SIGNUP CARD -->
             <div id="auth-view-signup" class="auth-form-card" style="display:none;">
                 <div class="auth-card-header">
-                    <h3 class="auth-card-title">Register Agency Profile</h3>
-                    <p class="auth-card-subtitle">Register for MeghDrishti Meteorological Operations</p>
+                    <h3 class="auth-card-title">Create Local Demo Profile</h3>
+                    <p class="auth-card-subtitle">Stored in this browser only; not connected to an agency or server</p>
                 </div>
 
-                <div id="signup-alert" class="auth-alert-msg error"></div>
+                <div id="signup-alert" class="auth-alert-msg"></div>
 
                 <form id="form-signup" class="auth-form">
                     <div class="form-group">
@@ -141,13 +143,13 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="signup-email">Official Email</label>
-                        <input type="email" id="signup-email" class="form-input" placeholder="ramanathan@imd.gov.in" required>
+                        <label class="form-label" for="signup-email">Email for this demo profile</label>
+                        <input type="email" id="signup-email" class="form-input" placeholder="demo@example.invalid" required>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="signup-org">Organization / Agency</label>
-                        <input type="text" id="signup-org" class="form-input" placeholder="IMD / SDMA / NDMA / CWC / Municipal Corp">
+                        <label class="form-label" for="signup-org">Organization (optional)</label>
+                        <input type="text" id="signup-org" class="form-input" placeholder="Demo organization">
                     </div>
 
                     <div class="form-group">
@@ -164,7 +166,7 @@
                     </div>
 
                     <button type="submit" id="btn-signup-submit" class="btn-primary">
-                        <span>Create Operational Profile</span>
+                        <span>Create Local Demo Profile</span>
                     </button>
 
                     <p class="auth-switch-text">
@@ -177,19 +179,19 @@
             <div id="auth-view-forgot" class="auth-form-card" style="display:none;">
                 <div class="auth-card-header">
                     <h3 class="auth-card-title">Reset Access</h3>
-                    <p class="auth-card-subtitle">Enter your official email to receive password recovery instructions</p>
+                    <p class="auth-card-subtitle">Checks a local demo profile only; no recovery email is sent</p>
                 </div>
 
-                <div id="forgot-alert" class="auth-alert-msg success"></div>
+                <div id="forgot-alert" class="auth-alert-msg"></div>
 
                 <form id="form-forgot" class="auth-form">
                     <div class="form-group">
                         <label class="form-label" for="forgot-email">Account Email</label>
-                        <input type="email" id="forgot-email" class="form-input" placeholder="officer@disaster.gov.in" required>
+                        <input type="email" id="forgot-email" class="form-input" placeholder="demo@example.invalid" required>
                     </div>
 
                     <button type="submit" id="btn-forgot-submit" class="btn-primary">
-                        <span>Send Recovery Link</span>
+                        <span>Simulate Password Reset</span>
                     </button>
 
                     <p class="auth-switch-text">
@@ -232,7 +234,7 @@
                     </a>
                     <a href="#/weather" class="nav-link" data-route="/weather">
                         <span class="icon">🌤️</span>
-                        <span>Live Weather</span>
+                        <span>Weather API</span>
                     </a>
                     <a href="#/rainfall" class="nav-link" data-route="/rainfall">
                         <span class="icon">🌧️</span>
@@ -302,9 +304,9 @@
                 <div class="system-status-pill">
                     <div>
                         <span class="sys-dot"></span>
-                        <span id="sidebar-mode-status">Mode: LIVE</span>
+                        <span id="sidebar-mode-status">Weather: Open-Meteo</span>
                     </div>
-                    <span class="mono" id="sidebar-provider-tag" style="color:var(--cyan-primary);">ISRO/IMD/OM</span>
+                    <span class="mono" id="sidebar-provider-tag" style="color:var(--cyan-primary);">Other feeds: DEMO</span>
                 </div>
 
                 <div class="user-profile-bar">
@@ -332,7 +334,7 @@
                 <div class="search-container">
                     <div class="search-input-wrap">
                         <span class="search-icon">🔍</span>
-                        <input type="text" id="global-search-input" class="search-input" placeholder="Search city or district (Mumbai, Delhi, Bengaluru, Chennai, London, Tokyo...)" autocomplete="off">
+                        <input type="text" id="global-search-input" class="search-input" placeholder="Search Andhra Pradesh cities (Nellore, Visakhapatnam, Vijayawada...)" autocomplete="off">
                     </div>
                     <div id="search-results-dropdown" class="search-results-dropdown">
                         <!-- Populated dynamically via Open-Meteo Geocoding -->
@@ -344,7 +346,7 @@
                     <!-- Selected Location Chip -->
                     <div class="topbar-location-chip" id="topbar-location-chip">
                         <span>📍</span>
-                        <span id="topbar-location-name">Mumbai, Maharashtra, India</span>
+                        <span id="topbar-location-name">Nellore, Andhra Pradesh, India</span>
                     </div>
 
                     <!-- Local Time Clock (Accurate to Location Timezone) -->
@@ -355,21 +357,21 @@
                     </div>
 
                     <!-- Live / Demo Mode Switcher Badge -->
-                    <button id="btn-mode-toggle" class="mode-toggle-badge live" title="Click to toggle between LIVE and DEMO data mode">
+                    <button id="btn-mode-toggle" class="mode-toggle-badge live" title="Toggle Open-Meteo weather API and local demo weather">
                         <span class="mode-pulse-dot"></span>
-                        <span id="mode-text">LIVE DATA</span>
+                        <span id="mode-text">OPEN-METEO WEATHER</span>
                     </button>
 
                     <!-- Notifications Bell & Drawer Trigger -->
                     <div class="notif-wrapper">
-                        <button id="btn-toggle-notifs" class="btn-icon-top" title="Notifications & Broadcast Alerts">
+                        <button id="btn-toggle-notifs" class="btn-icon-top" title="Local demo notifications">
                             <span>🔔</span>
                             <span id="notif-count-badge" class="notif-badge">3</span>
                         </button>
                         <div id="notifs-dropdown" class="notifs-dropdown">
                             <div class="notifs-header">
-                                <span>Emergency Broadcasts</span>
-                                <span class="mono" style="font-size:0.7rem; color:var(--cyan-primary);">CAP v1.2</span>
+                                <span>Demo Notices</span>
+                                <span class="mono" style="font-size:0.7rem; color:var(--cyan-primary);">LOCAL ONLY</span>
                             </div>
                             <div id="notifs-list" class="notifs-list">
                                 <!-- Populated dynamically -->
@@ -399,15 +401,19 @@
                 </div>
             </header>
 
+            <div class="data-provenance-banner" role="note">
+                <strong>DATA LIMITATION:</strong> Live mode fetches weather and geocoding from Open-Meteo only. Radar, satellite, AWS, NWP, nowcast, flood, alerts, and system metrics are illustrative demo data; no official warning feed or local API backend is connected.
+            </div>
+
             <!-- ── ROUTED VIEW CONTAINERS ── -->
 
             <!-- VIEW 1: OVERVIEW (/dashboard) -->
             <main id="view-dashboard" class="view-container active">
                 <div class="dashboard-header">
                     <div>
-                        <div class="loc-sub-tag">LOCATION-SPECIFIC RISK & EARLY WARNING</div>
+                        <div class="loc-sub-tag">LOCAL DEMO RISK SCENARIOS</div>
                         <h2 id="dash-city-title" class="dash-location-title">
-                            Mumbai, Maharashtra, India
+                            Nellore, Andhra Pradesh, India
                         </h2>
                         <div class="dash-meta-row">
                             <span class="dash-meta-item">
@@ -416,11 +422,11 @@
                             </span>
                             <span class="dash-meta-item">
                                 <span>🌐 Coordinates:</span>
-                                <span id="dash-coordinates" class="coord-tag">19.0760° N, 72.8777° E</span>
+                                <span id="dash-coordinates" class="coord-tag">14.4426° N, 79.9865° E</span>
                             </span>
                             <span class="dash-meta-item">
                                 <span>📡 Source:</span>
-                                <span id="dash-data-source">ISRO MOSDAC / IMD Radar / Open-Meteo</span>
+                                <span id="dash-data-source">Open-Meteo Forecast API</span>
                             </span>
                             <span class="dash-meta-item">
                                 <span>🛡️ Quality:</span>
@@ -438,7 +444,7 @@
                                 <span id="hero-temp-val" class="p-temp-val">--°C</span>
                                 <div class="p-icon-box" id="hero-weather-icon">⛅</div>
                             </div>
-                            <div id="hero-weather-condition" class="p-condition-text">Loading synoptic observations...</div>
+                            <div id="hero-weather-condition" class="p-condition-text">Loading Open-Meteo forecast...</div>
                             <div id="hero-feels-like" class="p-feels-like">Feels like --°C</div>
                             <div class="p-high-low">
                                 <span>High: <strong id="hero-temp-max" class="mono">--°</strong></span>
@@ -537,7 +543,7 @@
                         <div class="trend-bar-box">
                             <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:6px; display:flex; justify-content:space-between;">
                                 <span>Rainfall Intensity Trend: <strong id="rf-trend-desc" style="color:var(--cyan-primary);">Intensifying Convective Cluster</strong></span>
-                                <span class="mono" id="rf-provenance-badge">OBSERVATION (IMD/DWR)</span>
+                                <span class="mono" id="rf-provenance-badge">SIMULATED DEMO</span>
                             </div>
                             <div class="trend-track">
                                 <div class="trend-fill" id="rf-trend-bar" style="width: 78%;"></div>
@@ -596,7 +602,7 @@
                         <div class="section-card-title">
                             <span>⏱️ Short-Term Rainfall Nowcast</span>
                         </div>
-                        <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">Semi-Lagrangian Advection + DWR Extrapolation</span>
+                        <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">Illustrative demo multipliers</span>
                     </div>
                     <div class="nowcast-grid" id="nowcast-step-container">
                         <!-- Populated via JS -->
@@ -609,9 +615,9 @@
                     <div class="official-warnings-card">
                         <div class="section-card-header">
                             <div class="section-card-title" style="color:#ef4444;">
-                                <span>🏛️ Official Government Warnings (IMD/NDMA)</span>
+                                <span>🏛️ Official Warnings (feed not connected)</span>
                             </div>
-                            <span class="mono badge-official">AUTHORITATIVE</span>
+                            <span class="mono badge-official">NO OFFICIAL FEED</span>
                         </div>
                         <div id="official-alerts-container">
                             <!-- Populated via JS -->
@@ -622,9 +628,9 @@
                     <div class="ai-warnings-card">
                         <div class="section-card-header">
                             <div class="section-card-title" style="color:#38bdf8;">
-                                <span>🤖 MeghDrishti AI Early Warnings</span>
+                                <span>🤖 Illustrative Risk Scenarios</span>
                             </div>
-                            <span class="mono badge-ai">AI ESTIMATE (NOT OFFICIAL)</span>
+                            <span class="mono badge-ai">STATIC DEMO DATA</span>
                         </div>
                         <div id="ai-alerts-container">
                             <!-- Populated via JS -->
@@ -638,7 +644,7 @@
                         <div class="section-card-title">
                             <span>🕒 24-Hour Synoptic Progression</span>
                         </div>
-                        <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">High-Resolution Model Run</span>
+                        <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">Open-Meteo forecast response</span>
                     </div>
                     <div id="hourly-forecast-track" class="hourly-scroll-container">
                         <!-- Populated via JS -->
@@ -650,7 +656,7 @@
                     <div class="section-card">
                         <div class="section-card-header">
                             <div class="section-card-title">
-                                <span>📅 7-Day Operational Forecast</span>
+                                <span>📅 Open-Meteo Daily Forecast</span>
                             </div>
                             <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">Daily Aggregation</span>
                         </div>
@@ -662,21 +668,21 @@
                             <div class="section-card-title">
                                 <span>🛡️ Atmospheric Risk Matrix</span>
                             </div>
-                            <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">Derived Operational Thresholds</span>
+                                <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">Illustrative thresholds</span>
                         </div>
                         <div id="risk-matrix-container" class="risk-grid"></div>
                     </div>
                 </div>
             </main>
 
-            <!-- VIEW 2: LIVE WEATHER SOUNDING (/weather) -->
+            <!-- VIEW 2: WEATHER API DATA (/weather) -->
             <main id="view-weather" class="view-container">
                 <div class="dashboard-header">
                     <div>
-                        <div class="loc-sub-tag">IN-SITU OBSERVATIONS & SOUNDING</div>
-                        <h2 class="dash-location-title">Atmospheric Sounding & Live Telemetry</h2>
+                        <div class="loc-sub-tag">FORECAST DATA & DEMO EXAMPLES</div>
+                        <h2 class="dash-location-title">Weather API Data</h2>
                         <div class="dash-meta-row">
-                            <span>High-precision thermodynamic diagnostics, AWS ground network observations, and sensor quality control flags</span>
+                            <span>Open-Meteo forecast values plus illustrative thermodynamic and ground-station examples</span>
                         </div>
                     </div>
                 </div>
@@ -702,7 +708,7 @@
                 <div class="dashboard-header">
                     <div>
                         <div class="loc-sub-tag">REMOTE SENSING TELEMETRY</div>
-                        <h2 class="dash-location-title">Doppler Weather Radar (DWR) Operations Scope</h2>
+                        <h2 class="dash-location-title">Synthetic Doppler Radar Scenario</h2>
                         <div class="dash-meta-row">
                             <span>Plan Position Indicator (PPI) sweep, reflectivity (dBZ), radial velocity, and storm cell velocity vectors</span>
                         </div>
@@ -715,8 +721,8 @@
             <main id="view-satellite" class="view-container">
                 <div class="dashboard-header">
                     <div>
-                        <div class="loc-sub-tag">SPACE APPLICATIONS & MOSDAC</div>
-                        <h2 class="dash-location-title">INSAT-3DS & Multi-Spectral Satellite Products</h2>
+                        <div class="loc-sub-tag">SATELLITE DEMO SCENARIO</div>
+                        <h2 class="dash-location-title">Illustrative Satellite Products</h2>
                         <div class="dash-meta-row">
                             <span>Thermal Infrared (TIR1), Water Vapour (WV), Visible (VIS), Hydro-Estimator QPE, and Cloud Motion Vectors (CMV)</span>
                         </div>
@@ -732,7 +738,7 @@
                         <div class="loc-sub-tag">NUMERICAL WEATHER PREDICTION</div>
                         <h2 class="dash-location-title">NWP Multi-Model Comparison & Convective Potential</h2>
                         <div class="dash-meta-row">
-                            <span>Inter-comparison of IMD WRF (3 km), NCMRWF NCUM (12 km), ECMWF HRES (9 km), NOAA GFS (25 km), and Weighted Ensemble</span>
+                            <span>Illustrative model names and values; no NWP provider is connected</span>
                         </div>
                     </div>
                 </div>
@@ -744,7 +750,7 @@
                 <div class="dashboard-header">
                     <div>
                         <div class="loc-sub-tag">HYDRODYNAMIC MODELING</div>
-                        <h2 class="dash-location-title">CartoDEM Urban Flood & Inundation Modeler</h2>
+                        <h2 class="dash-location-title">Illustrative Flood-Risk Scenarios</h2>
                         <div class="dash-meta-row">
                             <span>Interactive precipitation stress-test, return period simulation (T=2 to 100 yr), and RFC 7946 GeoJSON GIS export</span>
                         </div>
@@ -760,7 +766,7 @@
                         <div class="loc-sub-tag">MESO-CONVECTIVE TRACKING</div>
                         <h2 class="dash-location-title">TITAN/SCIT Meso-Convective Storm Cell Monitor</h2>
                         <div class="dash-meta-row">
-                            <span>Real-time storm cell identification, centroid tracking, echo tops, VIL density, and projected 15/30/60 min cone of movement</span>
+                            <span>Static example storm cells; no live radar tracking feed is connected</span>
                         </div>
                     </div>
                 </div>
@@ -774,7 +780,7 @@
                         <div class="loc-sub-tag">CIVIL PROTECTION & DISASTER RESPONSE</div>
                         <h2 class="dash-location-title">Civil Protection & Incident Response Center</h2>
                         <div class="dash-meta-row">
-                            <span>OASIS Common Alerting Protocol (CAP v1.2) broadcast stream and multi-agency response triage</span>
+                            <span>Local demo scenarios only; no public or agency alert broadcast is implemented</span>
                         </div>
                     </div>
                 </div>
@@ -786,17 +792,18 @@
                 <div class="map-view-card">
                     <div class="map-control-bar">
                         <div style="font-size:0.85rem; font-weight:700; color:var(--cyan-primary);">
-                            GLOBAL METEOROLOGICAL OBSERVATION MAP (14 GIS LAYERS)
+                            LOCATION BASEMAP (WEATHER OVERLAYS NOT CONNECTED)
                         </div>
                         <div class="map-layers-group">
                             <button class="map-layer-btn active" data-layer="standard">Terrain Base</button>
-                            <button class="map-layer-btn" data-layer="temp">Temperature</button>
-                            <button class="map-layer-btn" data-layer="precip">Precipitation</button>
-                            <button class="map-layer-btn" data-layer="radar">Radar Sweep</button>
-                            <button class="map-layer-btn" data-layer="satellite">Satellite TIR1</button>
-                            <button class="map-layer-btn" data-layer="inundation">Flood Risk</button>
+                            <button class="map-layer-btn" data-layer="temp" disabled title="No temperature map feed is configured">Temperature</button>
+                            <button class="map-layer-btn" data-layer="precip" disabled title="No precipitation map feed is configured">Precipitation</button>
+                            <button class="map-layer-btn" data-layer="radar" disabled title="No radar map feed is configured">Radar demo</button>
+                            <button class="map-layer-btn" data-layer="satellite" disabled title="No satellite map feed is configured">Satellite demo</button>
+                            <button class="map-layer-btn" data-layer="inundation" disabled title="Illustrative only; no inundation map feed is configured">Flood demo</button>
                         </div>
                     </div>
+                    <p class="map-layer-status">Only the basemap is connected. No weather overlays are available.</p>
                     <div id="leaflet-map-element"></div>
                 </div>
             </main>
@@ -808,7 +815,7 @@
                         <div class="loc-sub-tag">MEDIUM-RANGE SYNOPTIC OUTLOOK</div>
                         <h2 class="dash-location-title">Extended 14-Day Synoptic Outlook</h2>
                         <div class="dash-meta-row">
-                            <span>High-resolution numerical weather prediction ensemble progression</span>
+                            <span>Open-Meteo daily forecast response</span>
                         </div>
                     </div>
                 </div>
@@ -836,7 +843,7 @@
                         <div class="loc-sub-tag">AI/ML HYDROLOGICAL INFERENCE</div>
                         <h2 class="dash-location-title">AI/ML Feature Pipeline & Model Registry</h2>
                         <div class="dash-meta-row">
-                            <span>Feature engineering, ConvLSTM inference, explainable AI contributions, and WMO/IMD Special Bulletin generator</span>
+                            <span>Illustrative workflow only; no inference model or official bulletin generator is connected</span>
                         </div>
                     </div>
                 </div>
@@ -850,7 +857,7 @@
                         <div class="loc-sub-tag">OBSERVABILITY & QUALITY CONTROL</div>
                         <h2 class="dash-location-title">System Health & Telemetry Observability</h2>
                         <div class="dash-meta-row">
-                            <span>Real-time ingestion pipelines, provider latencies, QC validation counters, and audit trail stream</span>
+                            <span>Local demo status; no ingestion backend or operational telemetry is connected</span>
                         </div>
                     </div>
                 </div>
@@ -939,26 +946,26 @@
                         <div class="pref-row" style="margin-top:12px;">
                             <div class="pref-label-box">
                                 <span class="pref-title">Current Operating Mode</span>
-                                <span class="pref-sub">Toggle between LIVE operational API feeds and calibrated scientific DEMO simulation</span>
+                                <span class="pref-sub">Changes weather source only; other products remain illustrative demo data</span>
                             </div>
                             <select id="setting-mode-select" class="custom-select" style="width:180px;">
-                                <option value="live">LIVE DATA MODE</option>
-                                <option value="demo">DEMO / SIMULATED</option>
+                                <option value="live">OPEN-METEO WEATHER</option>
+                                <option value="demo">DEMO WEATHER</option>
                             </select>
                         </div>
                         <div class="pref-row">
                             <div class="pref-label-box">
                                 <span class="pref-title">Doppler Weather Radar Connector</span>
-                                <span class="pref-sub">IMD DWR S-Band / C-Band Network Gateway</span>
+                                <span class="pref-sub">No live radar provider configured</span>
                             </div>
-                            <span class="mono" style="color:var(--color-normal); font-size:0.8rem;">CONNECTED (imd-dwr.gov.in/telemetry)</span>
+                            <span class="mono" style="color:var(--color-watch); font-size:0.8rem;">DEMO VALUES ONLY</span>
                         </div>
                         <div class="pref-row">
                             <div class="pref-label-box">
                                 <span class="pref-title">Satellite Provider Connector</span>
-                                <span class="pref-sub">ISRO MOSDAC / SAC High-Throughput Satellite Stream</span>
+                                <span class="pref-sub">No live satellite provider configured</span>
                             </div>
-                            <span class="mono" style="color:var(--color-normal); font-size:0.8rem;">CONNECTED (mosdac.gov.in/insat3ds)</span>
+                            <span class="mono" style="color:var(--color-watch); font-size:0.8rem;">DEMO VALUES ONLY</span>
                         </div>
                     </div>
 

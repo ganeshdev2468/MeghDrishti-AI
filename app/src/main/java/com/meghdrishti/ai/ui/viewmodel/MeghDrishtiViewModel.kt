@@ -72,8 +72,8 @@ class MeghDrishtiViewModel(application: Application) : AndroidViewModel(applicat
     fun setSimulationRainfall(rainfallMmHr: Float) {
         _uiState.update { it.copy(simulationRainfallSlider = rainfallMmHr) }
         val currentStation = _uiState.value.stations.getOrNull(_uiState.value.selectedStationIndex)
-        val lat = currentStation?.latitude ?: 18.9068
-        val lon = currentStation?.longitude ?: 72.8073
+        val lat = currentStation?.latitude ?: 14.4426
+        val lon = currentStation?.longitude ?: 79.9865
         val scenarios = weatherRepo.generateInundationScenarios(rainfallMmHr.toDouble())
         val geoJson = GisExportHelper.exportToGeoJson(scenarios, lat, lon)
         _uiState.update {
@@ -97,8 +97,8 @@ class MeghDrishtiViewModel(application: Application) : AndroidViewModel(applicat
 
                 val selected = stations.getOrNull(_uiState.value.selectedStationIndex) ?: stations.firstOrNull()
                 val precip = selected?.currentPrecipitation ?: 45.0
-                val lat = selected?.latitude ?: 18.9068
-                val lon = selected?.longitude ?: 72.8073
+                val lat = selected?.latitude ?: 14.4426
+                val lon = selected?.longitude ?: 79.9865
 
                 updateObservationalData(precip, lat, lon)
             } catch (_: Exception) {
@@ -131,8 +131,8 @@ class MeghDrishtiViewModel(application: Application) : AndroidViewModel(applicat
     fun dispatchDrillAlert(alertLevel: ImdAlertLevel, location: String, message: String) {
         viewModelScope.launch {
             val station = _uiState.value.stations.getOrNull(_uiState.value.selectedStationIndex)
-            val lat = station?.latitude ?: 18.9068
-            val lon = station?.longitude ?: 72.8073
+            val lat = station?.latitude ?: 14.4426
+            val lon = station?.longitude ?: 79.9865
             val precip = _uiState.value.simulationRainfallSlider.toDouble()
             val floodDepth = _uiState.value.inundationScenarios.getOrNull(_uiState.value.selectedReturnPeriodIndex)?.maxFloodDepth ?: 0.5
             val capXml = notificationHelper.generateCapXml(alertLevel, location, lat, lon, message)
@@ -174,7 +174,7 @@ class MeghDrishtiViewModel(application: Application) : AndroidViewModel(applicat
         viewModelScope.launch {
             _uiState.update { it.copy(isAiGenerating = true) }
             val station = _uiState.value.stations.getOrNull(_uiState.value.selectedStationIndex)
-            val stationName = station?.name ?: "Mumbai (Colaba)"
+            val stationName = station?.name ?: "Nellore, Andhra Pradesh, India"
             val precip = station?.currentPrecipitation ?: 0.0
             val wind = station?.windSpeed ?: 0.0
             val temp = station?.temperature ?: 28.0

@@ -103,7 +103,7 @@ fun RadarSatelliteScreen(
                     onClick = { viewModel.selectStation(index) },
                     label = {
                         Text(
-                            text = station.name.split(" ").first(),
+                            text = station.name.substringBefore(','),
                             fontWeight = if (state.selectedStationIndex == index) FontWeight.Bold else FontWeight.Normal
                         )
                     },
