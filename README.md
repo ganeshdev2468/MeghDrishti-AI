@@ -13,7 +13,7 @@ The Android app fetches station weather from Open-Meteo and has Firebase and Gem
 ---
 
 ## Web Dashboard
-The dashboard is a static client-side application served by `serve.ps1`. Its app routes use URL hashes; missing files return HTTP 404.
+The dashboard is a static client-side application served by `serve.ps1`. Its app routes use URL hashes; missing files return HTTP 404. The responsive dashboard supports light and dark themes; the selected theme is stored with local browser preferences.
 
 The browser makes direct requests to Open-Meteo's public forecast API using the selected city's coordinates; it does not use the geocoding API. Open-Meteo's forecast endpoint does not require an API key. Leaflet, OpenStreetMap tiles, fonts, and profile images are loaded from external hosts. All other weather products and warning/response examples are marked as demo data. Browser sign-in and profiles are local-only and are not production authentication.
 

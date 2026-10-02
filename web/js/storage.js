@@ -18,7 +18,8 @@ const DEFAULT_PREFERENCES = {
     temperature: 'celsius', // 'celsius' | 'fahrenheit'
     windSpeed: 'kmh',       // 'kmh' | 'mph' | 'ms'
     pressure: 'hpa',        // 'hpa' | 'inhg'
-    precipitation: 'mm'     // 'mm' | 'inch'
+    precipitation: 'mm',    // 'mm' | 'inch'
+    theme: 'light'          // 'light' | 'dark'
 };
 
 const LOCATION_DATA_VERSION = 'andhra-pradesh-cities-v1';

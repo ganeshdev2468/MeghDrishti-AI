@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MeghDrishti AI — Professional Meteorological Operations & Early Warning Center</title>
-    <meta name="description" content="AI/ML-based integrated heavy rainfall, urban flood/inundation risk, Doppler weather radar, satellite telemetry, and early warning platform.">
+    <title>MeghDrishti AI — AI-Powered Meteorological Intelligence Platform</title>
+    <meta name="description" content="Weather monitoring, Open-Meteo forecasts, and meteorological intelligence for Andhra Pradesh.">
     
     <!-- Modern Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,14 +36,14 @@
                 </div>
                 <div>
                     <h1 class="brand-name">MEGHDRISHTI AI</h1>
-                    <p class="brand-subtitle">METEOROLOGICAL INTELLIGENCE & EARLY WARNING</p>
+                    <p class="brand-subtitle">AI-POWERED METEOROLOGICAL INTELLIGENCE</p>
                 </div>
             </div>
 
             <div class="hero-center">
-                <h2 class="hero-title">Weather forecasts and flood-risk scenarios.</h2>
+                <h2 class="hero-title">Atmospheric intelligence for a changing world.</h2>
                 <p class="hero-desc">
-                    A local demonstration dashboard. Open-Meteo provides forecast weather; radar, satellite, model, flood, and alert panels use illustrative values.
+                    Explore live forecast conditions for Andhra Pradesh, alongside clearly labelled meteorological analysis and monitoring tools.
                 </p>
                 
                 <div class="hero-features">
@@ -57,7 +57,7 @@
                     </div>
                     <div class="hero-feat-item">
                         <span class="feat-dot"></span>
-                        <span>Illustrative flood scenarios & local alert drills</span>
+                        <span>Forecasts and location-aware weather monitoring</span>
                     </div>
                 </div>
             </div>
@@ -227,7 +227,7 @@
                 </a>
 
                 <!-- 15 Required Navigation Links -->
-                <nav class="nav-menu">
+                <nav class="nav-menu" aria-label="Main navigation">
                     <a href="#/dashboard" class="nav-link active" data-route="/dashboard">
                         <span class="icon">📊</span>
                         <span>Overview</span>
@@ -334,10 +334,10 @@
                 <div class="search-container">
                     <div class="search-input-wrap">
                         <span class="search-icon">🔍</span>
-                        <input type="text" id="global-search-input" class="search-input" placeholder="Search Andhra Pradesh cities (Nellore, Visakhapatnam, Vijayawada...)" autocomplete="off">
+                        <input type="search" id="global-search-input" class="search-input" placeholder="Search Andhra Pradesh city..." aria-label="Search Andhra Pradesh cities" autocomplete="off">
                     </div>
                     <div id="search-results-dropdown" class="search-results-dropdown">
-                        <!-- Populated dynamically via Open-Meteo Geocoding -->
+                        <!-- Populated dynamically from the supported Andhra Pradesh city list -->
                     </div>
                 </div>
 
@@ -357,7 +357,7 @@
                     </div>
 
                     <!-- Live / Demo Mode Switcher Badge -->
-                    <button id="btn-mode-toggle" class="mode-toggle-badge live" title="Toggle Open-Meteo weather API and local demo weather">
+                    <button id="btn-mode-toggle" class="mode-toggle-badge live" title="Toggle Open-Meteo weather and local demo weather">
                         <span class="mode-pulse-dot"></span>
                         <span id="mode-text">OPEN-METEO WEATHER</span>
                     </button>
@@ -398,20 +398,37 @@
                     <button id="btn-save-current-loc" class="btn-refresh" title="Save this location">
                         <span>⭐</span> Save
                     </button>
+                    <button id="btn-theme-toggle" class="theme-toggle" type="button" aria-label="Switch to dark theme" title="Switch to dark theme">🌙</button>
                 </div>
             </header>
 
             <div class="data-provenance-banner" role="note">
-                <strong>DATA LIMITATION:</strong> Live mode fetches weather and geocoding from Open-Meteo only. Radar, satellite, AWS, NWP, nowcast, flood, alerts, and system metrics are illustrative demo data; no official warning feed or local API backend is connected.
+                <strong>DATA SOURCES:</strong> Live weather forecasts are provided by Open-Meteo. Radar, satellite, model, flood-risk, and alert panels are illustrative scenarios and are not official warnings.
             </div>
 
             <!-- ── ROUTED VIEW CONTAINERS ── -->
 
             <!-- VIEW 1: OVERVIEW (/dashboard) -->
             <main id="view-dashboard" class="view-container active">
+                <section class="dashboard-intro" aria-labelledby="dashboard-intro-title">
+                    <div class="dashboard-intro-copy">
+                        <div class="intro-kicker"><span class="intro-live-dot"></span> WEATHER INTELLIGENCE <span class="intro-divider">/</span> ANDHRA PRADESH</div>
+                        <h1 id="dashboard-intro-title">Atmospheric insight,<br><span>made actionable.</span></h1>
+                        <p>Monitor current conditions, explore local forecasts and understand the changing sky across Andhra Pradesh.</p>
+                        <div class="intro-actions">
+                            <a class="intro-primary-action" href="#/forecast">Explore forecast <span aria-hidden="true">→</span></a>
+                            <a class="intro-secondary-action" href="#/radar">Open radar</a>
+                        </div>
+                    </div>
+                    <div class="intro-weather-mark" aria-hidden="true">
+                        <span class="weather-mark-sun"></span>
+                        <span class="weather-mark-cloud"></span>
+                        <span class="weather-mark-caption">OBSERVE · UNDERSTAND · PREPARE</span>
+                    </div>
+                </section>
                 <div class="dashboard-header">
                     <div>
-                        <div class="loc-sub-tag">LOCAL DEMO RISK SCENARIOS</div>
+                        <div class="loc-sub-tag">CURRENT CONDITIONS</div>
                         <h2 id="dash-city-title" class="dash-location-title">
                             Nellore, Andhra Pradesh, India
                         </h2>
@@ -708,9 +725,9 @@
                 <div class="dashboard-header">
                     <div>
                         <div class="loc-sub-tag">REMOTE SENSING TELEMETRY</div>
-                        <h2 class="dash-location-title">Synthetic Doppler Radar Scenario</h2>
+                        <h2 class="dash-location-title">Weather Radar</h2>
                         <div class="dash-meta-row">
-                            <span>Plan Position Indicator (PPI) sweep, reflectivity (dBZ), radial velocity, and storm cell velocity vectors</span>
+                            <span>Illustrative radar visualization · no live radar feed connected</span>
                         </div>
                     </div>
                 </div>
@@ -722,7 +739,7 @@
                 <div class="dashboard-header">
                     <div>
                         <div class="loc-sub-tag">SATELLITE DEMO SCENARIO</div>
-                        <h2 class="dash-location-title">Illustrative Satellite Products</h2>
+                        <h2 class="dash-location-title">Satellite Intelligence</h2>
                         <div class="dash-meta-row">
                             <span>Thermal Infrared (TIR1), Water Vapour (WV), Visible (VIS), Hydro-Estimator QPE, and Cloud Motion Vectors (CMV)</span>
                         </div>
@@ -778,7 +795,7 @@
                 <div class="dashboard-header">
                     <div>
                         <div class="loc-sub-tag">CIVIL PROTECTION & DISASTER RESPONSE</div>
-                        <h2 class="dash-location-title">Civil Protection & Incident Response Center</h2>
+                        <h2 class="dash-location-title">Weather Alerts</h2>
                         <div class="dash-meta-row">
                             <span>Local demo scenarios only; no public or agency alert broadcast is implemented</span>
                         </div>
@@ -841,7 +858,7 @@
                 <div class="dashboard-header">
                     <div>
                         <div class="loc-sub-tag">AI/ML HYDROLOGICAL INFERENCE</div>
-                        <h2 class="dash-location-title">AI/ML Feature Pipeline & Model Registry</h2>
+                        <h2 class="dash-location-title">MeghDrishti AI Insights</h2>
                         <div class="dash-meta-row">
                             <span>Illustrative workflow only; no inference model or official bulletin generator is connected</span>
                         </div>
@@ -897,7 +914,17 @@
                     </div>
 
                     <div class="settings-card">
-                        <h3>Measurement Units</h3>
+                        <h3>Appearance & Measurement Units</h3>
+                        <div class="pref-row">
+                            <div class="pref-label-box">
+                                <span class="pref-title">Color theme</span>
+                                <span class="pref-sub">Choose a light or dark workspace</span>
+                            </div>
+                            <select id="pref-theme-select" class="custom-select" style="width:130px;">
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                            </select>
+                        </div>
                         <div class="pref-row">
                             <div class="pref-label-box">
                                 <span class="pref-title">Temperature Unit</span>
@@ -975,6 +1002,20 @@
                     </div>
                 </div>
             </main>
+
+        <footer class="app-footer">
+            <a class="footer-brand" href="#/dashboard">MEGHDRISHTI AI</a>
+            <span>AI-Powered Meteorological Intelligence Platform</span>
+            <nav aria-label="Footer navigation">
+                <a href="#/weather">Weather</a>
+                <a href="#/forecast">Forecast</a>
+                <a href="#/radar">Radar</a>
+                <a href="#/satellite">Satellite</a>
+                <a href="#/alerts">Alerts</a>
+                <a href="#/ai-analysis">AI Insights</a>
+            </nav>
+            <small>© 2026 MeghDrishti AI</small>
+        </footer>
         </div>
 
         <!-- Mobile Bottom Navigation -->

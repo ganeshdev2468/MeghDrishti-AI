@@ -21,6 +21,7 @@ class MeghDrishtiApp {
         this.radarAnimationTimer = null;
         this.radarAngle = 0;
         this.searchDebounceTimer = null;
+        this.activeRoute = null;
 
         // Interactive stress-test values
         this.stressRainRate = 65; // mm/hr
@@ -30,6 +31,7 @@ class MeghDrishtiApp {
     }
 
     init() {
+        this.applyTheme(StorageService.getPreferences().theme);
         this.setupAuthEvents();
         this.setupGlobalSearch();
         this.setupTopbarEvents();
@@ -39,6 +41,18 @@ class MeghDrishtiApp {
         this.startUtcClock();
 
         this.router.init();
+    }
+
+    applyTheme(theme) {
+        const selectedTheme = theme === 'dark' ? 'dark' : 'light';
+        document.documentElement.dataset.theme = selectedTheme;
+        const themeButton = document.getElementById('btn-theme-toggle');
+        if (themeButton) {
+            const darkMode = selectedTheme === 'dark';
+            themeButton.textContent = darkMode ? '☀️' : '🌙';
+            themeButton.setAttribute('aria-label', `Switch to ${darkMode ? 'light' : 'dark'} theme`);
+            themeButton.title = `Switch to ${darkMode ? 'light' : 'dark'} theme`;
+        }
     }
 
     /**
@@ -60,6 +74,11 @@ class MeghDrishtiApp {
      * Handle route changes dispatched by Router
      */
     async handleRoute(path, query) {
+        if (this.activeRoute !== path) {
+            window.scrollTo(0, 0);
+            this.activeRoute = path;
+        }
+
         const isAuth = AuthService.isAuthenticated();
 
         // 1. Show appropriate main container
@@ -1414,9 +1433,7 @@ class MeghDrishtiApp {
         }
     }
 
-    /**
-     * Global Location Search with Open-Meteo Geocoding
-     */
+    /** Search and select one of the supported Andhra Pradesh locations. */
     setupGlobalSearch() {
         const searchInput = document.getElementById('global-search-input');
         const dropdown = document.getElementById('search-results-dropdown');
@@ -1433,7 +1450,7 @@ class MeghDrishtiApp {
             }
 
             this.searchDebounceTimer = setTimeout(async () => {
-                dropdown.innerHTML = '<div class="search-item">Searching global coordinates...</div>';
+                dropdown.innerHTML = '<div class="search-item">Searching Andhra Pradesh locations...</div>';
                 dropdown.classList.add('active');
 
                 const results = await weatherService.searchLocations(query);
@@ -1485,6 +1502,15 @@ class MeghDrishtiApp {
      * Topbar Events & Notification Toggle
      */
     setupTopbarEvents() {
+        const themeButton = document.getElementById('btn-theme-toggle');
+        if (themeButton) {
+            themeButton.addEventListener('click', () => {
+                const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+                StorageService.setPreferences({ theme: nextTheme });
+                this.applyTheme(nextTheme);
+            });
+        }
+
         const notifBtn = document.getElementById('btn-toggle-notifs');
         const notifDropdown = document.getElementById('notifs-dropdown');
         if (notifBtn && notifDropdown) {
@@ -1567,14 +1593,16 @@ class MeghDrishtiApp {
             ['pref-temp-select', 'temperature'],
             ['pref-wind-select', 'windSpeed'],
             ['pref-pressure-select', 'pressure'],
-            ['pref-precip-select', 'precipitation']
+            ['pref-precip-select', 'precipitation'],
+            ['pref-theme-select', 'theme']
         ];
         preferenceControls.forEach(([elementId, preference]) => {
             const select = document.getElementById(elementId);
             if (!select) return;
             select.addEventListener('change', () => {
                 StorageService.setPreferences({ [preference]: select.value });
-                if (this.weatherData) {
+                if (preference === 'theme') this.applyTheme(select.value);
+                else if (this.weatherData) {
                     this.renderDashboard(this.weatherData);
                     this.renderForecastExtended(this.weatherData);
                 }
@@ -1600,7 +1628,8 @@ class MeghDrishtiApp {
 
         const preferences = StorageService.getPreferences();
         [['pref-temp-select', 'temperature'], ['pref-wind-select', 'windSpeed'],
-            ['pref-pressure-select', 'pressure'], ['pref-precip-select', 'precipitation']]
+            ['pref-pressure-select', 'pressure'], ['pref-precip-select', 'precipitation'],
+            ['pref-theme-select', 'theme']]
             .forEach(([elementId, preference]) => {
                 const select = document.getElementById(elementId);
                 if (select) select.value = preferences[preference];
