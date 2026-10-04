@@ -1,4 +1,5 @@
-const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const isNumber = (value) => value !== null && value !== undefined && Number.isFinite(Number(value));
+const formatTime = (value) => value ? new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null;
 
 export const alertThresholds = {
     heavyRain: 70,
@@ -11,183 +12,134 @@ export const alertThresholds = {
 
 const getMaxRainProbability = (data) => {
     const hourly = Array.isArray(data?.hourly) ? data.hourly : [];
-    const daily = Array.isArray(data?.daily) ? data.daily : [];
-    const hourlyMax = hourly.reduce((max, item) => Math.max(max, Number(item?.precipitationProbability || 0)), 0);
-    const dailyMax = daily.reduce((max, item) => Math.max(max, Number(item?.rainProbability || 0)), 0);
-    return Math.max(hourlyMax, dailyMax, Number(data?.snapshot?.precipitation || 0) > 0 ? 55 : 0);
+    const probabilities = hourly.slice(0, 6)
+        .map(item => item?.precipitationProbability)
+        .filter(isNumber)
+        .map(Number);
+    return probabilities.length ? Math.max(...probabilities) : null;
 };
 
 export function buildAiAssessment(data) {
     const snapshot = data?.snapshot || {};
     const hourly = Array.isArray(data?.hourly) ? data.hourly : [];
-    const daily = Array.isArray(data?.daily) ? data.daily : [];
-    const floodRisk = data?.floodRisk || {};
-    const rainProbability = getMaxRainProbability(data);
-    const windSpeed = Number(snapshot.windSpeed || 0);
-    const uvIndex = Number(snapshot.uvIndex || 0);
-    const humidity = Number(snapshot.humidity || 0);
-    const temperature = Number(snapshot.temperature || 0);
-    const rainRate = Number(snapshot.precipitation || 0);
-    const totalRisk = clamp(Math.round((rainProbability * 0.45) + (windSpeed * 0.7) + (uvIndex * 6) + (Number(floodRisk.score || 0) * 0.35)), 0, 100);
-
-    const temperatureTrend = (() => {
-        if (hourly.length < 2) return 0;
-        const first = Number(hourly[0]?.temp || 0);
-        const last = Number(hourly[hourly.length - 1]?.temp || 0);
-        return Number((last - first).toFixed(1));
-    })();
-
     const insights = [];
+    const recommendations = [];
+    if (!snapshot.available || snapshot.isDemo) {
+        return {
+            available: false,
+            summary: snapshot.isDemo ? 'AI weather insights require live Open-Meteo data.' : 'AI weather insights are unavailable until live weather data is retrieved.',
+            insights,
+            recommendations,
+            keyTakeaways: []
+        };
+    }
 
-    if (rainProbability >= 70) {
+    const humidity = isNumber(snapshot.humidity) ? Number(snapshot.humidity) : null;
+    const windSpeed = isNumber(snapshot.windSpeed) ? Number(snapshot.windSpeed) : null;
+    const temperature = isNumber(snapshot.temperature) ? Number(snapshot.temperature) : null;
+    const feelsLike = isNumber(snapshot.feelsLike) ? Number(snapshot.feelsLike) : null;
+    const uvIndex = isNumber(snapshot.uvIndex) ? Number(snapshot.uvIndex) : null;
+    const rainProbability = getMaxRainProbability(data);
+
+    if (rainProbability !== null && rainProbability >= 60) {
+        const forecast = hourly.slice(0, 6).find(item => Number(item?.precipitationProbability) === rainProbability);
         insights.push({
             icon: '🌧️',
-            title: 'Rainfall increase expected',
-            detail: 'Precipitation probability is rising through the evening period.',
-            why: ['Precipitation probability is climbing', 'Cloud cover is increasing', 'Humidity remains elevated'],
-            confidence: 82,
-            period: 'Evening to night'
-        });
-    } else if (rainProbability >= 50) {
-        insights.push({
-            icon: '⛅',
-            title: 'Moisture is building',
-            detail: 'The atmosphere is trending wetter, with a meaningful chance of showers.',
-            why: ['Cloud deck deepening', 'Rain probability remains elevated', 'Moisture is persisting'],
-            confidence: 69,
-            period: 'Next 6 to 12 hours'
-        });
-    } else {
-        insights.push({
-            icon: '☀️',
-            title: 'Mostly stable weather window',
-            detail: 'The next period is comparatively settled with limited rain signal.',
-            why: ['Rain probability remains moderate to low', 'Wind remains manageable', 'Conditions are relatively stable'],
-            confidence: 66,
-            period: 'Next several hours'
+            title: 'Rain probability is elevated',
+            detail: `Open-Meteo forecasts a ${rainProbability}% precipitation probability${formatTime(forecast?.time) ? ` around ${formatTime(forecast.time)}` : ' in the next six hours'}.`,
+            basis: ['Hourly precipitation probability'],
+            period: formatTime(forecast?.time) || 'Next six hours'
         });
     }
 
-    if (humidity >= 70) {
+    if (humidity !== null && humidity >= 75) {
         insights.push({
             icon: '💧',
-            title: 'High humidity is sustaining rainfall potential',
-            detail: 'Moisture retention is keeping the atmosphere active.',
-            why: ['Humidity is elevated', 'Dew point remains close to surface temperature', 'Cloud formation is supported'],
-            confidence: 78,
-            period: 'Ongoing'
+            title: 'Humidity is high',
+            detail: `Relative humidity is ${humidity}% in the current Open-Meteo data.`,
+            basis: ['Current relative humidity'],
+            period: 'Current conditions'
         });
     }
 
-    if (windSpeed >= 25) {
+    if (windSpeed !== null && windSpeed >= 25) {
         insights.push({
             icon: '💨',
-            title: 'Wind remains a factor',
-            detail: 'Surface flow is strong enough to influence travel and visibility.',
-            why: ['Local wind speed is elevated', 'Wind gusts are noticeable', 'Pressure gradient remains active'],
-            confidence: 71,
-            period: 'Current to next 6 hours'
+            title: 'Wind speed is elevated',
+            detail: `Open-Meteo reports a current wind speed of ${windSpeed} km/h.`,
+            basis: ['Current 10 m wind speed'],
+            period: 'Current conditions'
         });
     }
 
-    if (uvIndex >= 7) {
+    if (feelsLike !== null && temperature !== null && feelsLike - temperature >= 3) {
+        insights.push({
+            icon: '🌡️',
+            title: 'Apparent temperature is higher',
+            detail: `The forecast apparent temperature is ${feelsLike}°C versus ${temperature}°C air temperature.`,
+            basis: ['Air temperature', 'Apparent temperature'],
+            period: 'Current conditions'
+        });
+    }
+
+    if (uvIndex !== null && uvIndex >= 7) {
         insights.push({
             icon: '☀️',
-            title: 'UV exposure is elevated',
-            detail: 'Sun exposure remains high for outdoor activity during peak daylight.',
-            why: ['UV index is above moderate threshold', 'Clear skies persist', 'Solar exposure remains elevated'],
-            confidence: 84,
-            period: 'Midday window'
+            title: 'UV index is high',
+            detail: `The current hourly forecast reports a UV index of ${uvIndex}.`,
+            basis: ['Hourly UV index'],
+            period: 'Current forecast hour'
         });
     }
 
-    if (Number(floodRisk.score || 0) >= 70) {
-        insights.push({
-            icon: '🌊',
-            title: 'Flood-sensitive conditions are present',
-            detail: 'Rainfall accumulation and urban drainage limitations are raising inundation risk.',
-            why: ['Stormwater runoff is elevated', 'Antecedent moisture is high', 'Urban drainage can become constrained'],
-            confidence: 80,
-            period: 'Next 1 to 3 hours'
-        });
+    if (rainProbability !== null && rainProbability >= 60) {
+        recommendations.push('Consider keeping rain protection available during the forecast period with elevated precipitation probability.');
     }
-
-    if (insights.length === 0) {
-        insights.push({
-            icon: '✅',
-            title: 'No major active signal',
-            detail: 'Current conditions are not indicating a sharp change in the immediate forecast window.',
-            why: ['No strong rainfall trigger detected', 'Wind remains moderate', 'Conditions look steady'],
-            confidence: 60,
-            period: 'Immediate future'
-        });
+    if (uvIndex !== null && uvIndex >= 7) {
+        recommendations.push('Consider sun protection during hours with a high forecast UV index.');
     }
-
-    const recommendations = [];
-    if (rainProbability >= 70) {
-        recommendations.push('Outdoor activity is best planned earlier in the day before the evening rain signal strengthens.');
-        recommendations.push('Travel timing should account for slower road movement if rainfall becomes more intense.');
-    } else if (rainProbability >= 45) {
-        recommendations.push('Keep a light rain plan for the next several hours, particularly if outdoor work is time-sensitive.');
-    } else {
-        recommendations.push('The immediate window remains generally stable for routine outdoor plans.');
-    }
-
-    if (uvIndex >= 7) {
-        recommendations.push('Protective coverage and hydration are recommended during the strongest solar period.');
-    }
-
-    if (Number(floodRisk.score || 0) >= 70) {
-        recommendations.push('Flood-prone corridors should be monitored closely if rainfall intensity rises quickly.');
-    }
-
-    if (windSpeed >= 25) {
-        recommendations.push('Higher wind and gust conditions may affect open-road travel and exposed outdoor activities.');
-    }
-
-    const statusText = totalRisk >= 75 ? 'HIGH WEATHER RISK' : totalRisk >= 50 ? 'MODERATE WEATHER RISK' : 'LOW TO MODERATE WEATHER RISK';
 
     return {
-        overallRiskLabel: statusText,
-        overallRiskScore: totalRisk,
-        confidence: clamp(Math.round((rainProbability * 0.3) + (humidity * 0.15) + (Math.abs(temperatureTrend) < 5 ? 10 : 5) + (Number(floodRisk.score || 0) * 0.12)), 55, 92),
-        summary: `Current conditions around ${snapshot?.location?.name || 'this location'} show ${rainProbability >= 70 ? 'a strong rain signal' : rainProbability >= 50 ? 'a rising moisture signal' : 'limited instability'} with ${windSpeed >= 25 ? 'moderate to strong winds' : 'manageable wind conditions'}.`,
+        available: true,
+        summary: 'Rule-based observations from available Open-Meteo weather variables. These insights are advisory and are not official warnings.',
         insights,
         recommendations,
-        keyTakeaways: [
-            rainProbability >= 70 ? 'Rain probability is increasing during the late-day window.' : 'Rainfall remains not dominant in the immediate outlook.',
-            humidity >= 70 ? 'Moisture remains elevated across the local atmosphere.' : 'Humidity is moderate enough to keep conditions manageable.',
-            windSpeed >= 25 ? 'Wind is active enough to affect open outdoor conditions.' : 'Wind remains manageable for routine planning.'
-        ]
+        keyTakeaways: insights.map(insight => insight.detail)
     };
 }
 
 export function buildWeatherStory(data) {
     const snapshot = data?.snapshot || {};
-    const humidity = Number(snapshot.humidity || 0);
+    if (!snapshot.available || snapshot.isDemo) {
+        return {
+            headline: "TODAY'S WEATHER STORY",
+            summary: 'Live Open-Meteo weather data is required for this analysis.',
+            why: [],
+            expected: []
+        };
+    }
+    const humidity = isNumber(snapshot.humidity) ? Number(snapshot.humidity) : null;
     const rainProbability = getMaxRainProbability(data);
-    const windSpeed = Number(snapshot.windSpeed || 0);
-    const uvIndex = Number(snapshot.uvIndex || 0);
+    const windSpeed = isNumber(snapshot.windSpeed) ? Number(snapshot.windSpeed) : null;
+    const uvIndex = isNumber(snapshot.uvIndex) ? Number(snapshot.uvIndex) : null;
 
     const why = [];
-    if (humidity > 65) why.push('High humidity');
-    if (rainProbability >= 50) why.push('Increasing precipitation probability');
-    if (windSpeed >= 20) why.push('Moderate evening wind');
-    if (uvIndex >= 7) why.push('Elevated solar exposure');
-    if (!why.length) why.push('Stable atmospheric pattern');
+    if (humidity !== null) why.push(`Relative humidity: ${humidity}%`);
+    if (rainProbability !== null) why.push(`Maximum hourly precipitation probability in next six hours: ${rainProbability}%`);
+    if (windSpeed !== null) why.push(`Current wind speed: ${windSpeed} km/h`);
+    if (uvIndex !== null) why.push(`Current hourly UV index: ${uvIndex}`);
 
     const expected = [];
-    if (rainProbability >= 50) expected.push('Possible evening rainfall');
-    if (uvIndex >= 7) expected.push('Strong daytime solar exposure');
-    if (windSpeed >= 20) expected.push('Noticeable wind through the late afternoon');
-    if (!expected.length) expected.push('Mostly steady conditions through the next cycle');
+    if (rainProbability !== null) expected.push(`Hourly precipitation probability peaks at ${rainProbability}% within the next six hours`);
+    if (windSpeed !== null) expected.push(`Current forecast wind speed is ${windSpeed} km/h`);
+    if (uvIndex !== null) expected.push(`Current hourly UV index is ${uvIndex}`);
+    if (!expected.length) expected.push('No current weather variables are available for a summary.');
 
     return {
         headline: "TODAY'S WEATHER STORY",
-        summary: `${snapshot?.condition || 'Current conditions'} are ${humidity > 65 ? 'warm and humid' : 'generally manageable'} with ${rainProbability >= 50 ? 'a rising rain signal' : 'limited rain risk'} across the immediate period.`,
+        summary: snapshot.isDemo ? 'Live weather data is required for this analysis.' : `${snapshot?.condition || 'Current weather'} for ${snapshot?.location?.name || 'this location'}, based only on available Open-Meteo variables.`,
         why,
-        expected,
-        confidence: humidity > 65 && rainProbability >= 50 ? 'Moderate' : (rainProbability >= 35 ? 'Moderate' : 'Low')
+        expected
     };
 }
 
@@ -202,10 +154,10 @@ export function buildAiWeatherBrief(data) {
     const today = daily[0] || null;
     const tomorrow = daily[1] || null;
 
-    if (now) {
+    if (now && snapshot.available && !snapshot.isDemo) {
         sections.push({
             title: 'NOW',
-            text: `Current conditions are ${snapshot.condition || 'stable'}, with ${Number(snapshot.temperature || 0).toFixed(0)}°C and ${Number(snapshot.humidity || 0)}% humidity.`,
+            text: `Current conditions are ${snapshot.condition || 'unavailable'}${isNumber(snapshot.temperature) ? `, with ${Number(snapshot.temperature).toFixed(0)}°C` : ''}${isNumber(snapshot.humidity) ? ` and ${Number(snapshot.humidity)}% humidity` : ''}.`,
             source: 'Current snapshot'
         });
     }
@@ -213,35 +165,35 @@ export function buildAiWeatherBrief(data) {
     if (nextHours.length) {
         const first = nextHours[0];
         const last = nextHours[nextHours.length - 1];
-        sections.push({
+        if (first.condition || last.condition) sections.push({
             title: 'NEXT FEW HOURS',
-            text: `${first.condition} is likely to continue, with a transition toward ${last.condition.toLowerCase()} as the afternoon evolves.`,
+            text: `${first.condition || 'Conditions unavailable'}${last.condition && last.condition !== first.condition ? `, changing to ${last.condition.toLowerCase()} later in the forecast period` : ''}.`,
             source: 'Hourly forecast'
         });
     }
 
-    if (today) {
+    if (today && (isNumber(today.maxTemp) || isNumber(today.rainProbability))) {
         sections.push({
             title: 'TODAY',
-            text: `Maximum temperature is expected near ${Number(today.maxTemp || 0).toFixed(0)}°C with ${Number(today.rainProbability || 0)}% rain probability.`,
+            text: `${isNumber(today.maxTemp) ? `Maximum temperature is expected near ${Number(today.maxTemp).toFixed(0)}°C` : ''}${isNumber(today.maxTemp) && isNumber(today.rainProbability) ? ' with ' : ''}${isNumber(today.rainProbability) ? `${Number(today.rainProbability)}% precipitation probability` : ''}.`,
             source: 'Daily forecast'
         });
     }
 
     if (hourly.length > 12) {
         const evening = hourly[Math.min(12, hourly.length - 1)] || hourly[hourly.length - 1];
-        sections.push({
-            title: 'TONIGHT',
-            text: `${evening.condition} conditions remain likely overnight, with ${Number(evening.precipitationProbability || 0)}% rain probability and moderate wind.`,
-            source: 'Evening forecast'
+        if (evening.condition || isNumber(evening.precipitationProbability)) sections.push({
+            title: 'LATER FORECAST',
+            text: `${evening.condition || 'Conditions unavailable'}${isNumber(evening.precipitationProbability) ? ` with ${Number(evening.precipitationProbability)}% precipitation probability` : ''}.`,
+            source: 'Hourly forecast'
         });
     }
 
-    if (tomorrow) {
+    if (tomorrow && (isNumber(tomorrow.maxTemp) || isNumber(tomorrow.rainProbability))) {
         sections.push({
             title: 'TOMORROW',
-            text: `Tomorrow is expected to bring a ${Number(tomorrow.maxTemp || 0).toFixed(0)}°C high with ${Number(tomorrow.rainProbability || 0)}% rain chance.`,
-            source: 'Next-day forecast'
+            text: `${isNumber(tomorrow.maxTemp) ? `Forecast high ${Number(tomorrow.maxTemp).toFixed(0)}°C` : ''}${isNumber(tomorrow.maxTemp) && isNumber(tomorrow.rainProbability) ? '; ' : ''}${isNumber(tomorrow.rainProbability) ? `${Number(tomorrow.rainProbability)}% precipitation probability` : ''}.`,
+            source: 'Daily forecast'
         });
     }
 
@@ -250,7 +202,8 @@ export function buildAiWeatherBrief(data) {
 
 export function buildNwpModelCenter(data) {
     const models = Array.isArray(data?.nwp?.models) ? data.nwp.models.filter(Boolean) : [];
-    if (!models.length) {
+    if (data?.nwp?.available !== true || !models.length || !data?.nwp?.provenance?.source || !data?.nwp?.provenance?.timestamp ||
+        !models.every(model => isNumber(model.tempC) && isNumber(model.precip24hMm))) {
         return {
             available: false,
             models: [],
@@ -262,8 +215,8 @@ export function buildNwpModelCenter(data) {
         };
     }
 
-    const temps = models.map(m => Number(m.tempC || 0));
-    const precip = models.map(m => Number(m.precip24hMm || 0));
+    const temps = models.map(m => Number(m.tempC));
+    const precip = models.map(m => Number(m.precip24hMm));
     const tempRange = Math.max(...temps) - Math.min(...temps);
     const precipRange = Math.max(...precip) - Math.min(...precip);
     const uncertainty = tempRange > 4 || precipRange > 40 ? 'High' : (tempRange > 2 || precipRange > 20 ? 'Moderate' : 'Low');
@@ -282,163 +235,104 @@ export function buildNwpModelCenter(data) {
         models,
         consensus,
         consensusReason: models.length > 1 ? 'The current model set has enough data to assess agreement.' : 'Only one model source is currently available.',
-        disagreement: disagreement ? `${models.length > 1 ? 'Models show moderate disagreement regarding rainfall timing.' : 'Model differences unavailable'}` : 'Model differences unavailable',
+        disagreement: disagreement ? 'Ranges calculated from connected model outputs.' : 'Model differences unavailable',
         uncertainty,
         explanation: 'Model comparison requires model-specific forecast data.'
     };
 }
 
 export function buildHistoricalAnalytics(data) {
-    const daily = Array.isArray(data?.daily) ? data.daily : [];
-    if (!daily.length) {
+    const historical = data?.historical;
+    const daily = Array.isArray(historical?.daily) ? historical.daily : [];
+    if (!daily.length || !historical?.provenance?.source) {
         return {
             available: false,
-            message: 'History unavailable',
-            detail: 'Historical baseline data is required.'
+            message: 'Historical baseline unavailable',
+            detail: 'Historical comparison requires a connected historical weather dataset; forecast data is not a historical baseline.'
         };
     }
 
-    const temps = daily.map(item => Number(item.maxTemp || 0));
-    const rain = daily.map(item => Number(item.precipitationSum || 0));
-    const humidity = daily.map(item => Number((item.rainProbability || 0) * 0.7 + 45));
-    const wind = daily.map(item => Number(item.windMax || 0));
+    const average = (key) => {
+        const values = daily.map(item => item?.[key]).filter(isNumber).map(Number);
+        return values.length ? (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1) : null;
+    };
 
     return {
         available: true,
         headline: 'HISTORY & CLIMATE ANALYTICS',
         metrics: {
-            avgTemp: (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1),
-            avgRain: (rain.reduce((a, b) => a + b, 0) / rain.length).toFixed(1),
-            avgHumidity: (humidity.reduce((a, b) => a + b, 0) / humidity.length).toFixed(0),
-            avgWind: (wind.reduce((a, b) => a + b, 0) / wind.length).toFixed(1)
+            avgTemp: average('maxTemp'),
+            avgRain: average('precipitationSum'),
+            avgHumidity: average('humidity'),
+            avgWind: average('windMax')
         },
         message: 'Current period data is available for trend review.',
-        detail: 'Historical baseline data is required for anomaly comparison.'
+        detail: historical.provenance.source
     };
 }
 
 export function buildSmartAlerts(data) {
     const snapshot = data?.snapshot || {};
     const rainProbability = getMaxRainProbability(data);
-    const floodScore = Number(data?.floodRisk?.score || 0);
-    const windSpeed = Number(snapshot.windSpeed || 0);
-    const uvIndex = Number(snapshot.uvIndex || 0);
-    const temperature = Number(snapshot.temperature || 0);
+    const windSpeed = isNumber(snapshot.windSpeed) ? Number(snapshot.windSpeed) : null;
+    const uvIndex = isNumber(snapshot.uvIndex) ? Number(snapshot.uvIndex) : null;
+    const temperature = isNumber(snapshot.temperature) ? Number(snapshot.temperature) : null;
     const alerts = [];
+    if (!snapshot.available || snapshot.isDemo) return alerts;
 
-    const addAlert = (entry) => {
-        const key = `${entry.type}:${entry.location}:${entry.severity}:${entry.timeWindow}`;
-        if (!entry._seen) {
-            entry._seen = true;
-        }
-        alerts.push(entry);
-    };
+    const timestamp = snapshot.provenance?.timestamp || null;
+    const location = snapshot?.location?.name || 'Current location';
+    const addInsight = (entry) => alerts.push({
+        ...entry,
+        category: 'AI WEATHER INSIGHT',
+        location,
+        source: 'Open-Meteo weather data',
+        timestamp,
+        expectedEffect: 'Advisory analysis only; this is not an official emergency warning.'
+    });
 
-    if (rainProbability >= alertThresholds.heavyRain) {
-        addAlert({
-            id: 'smart-heavy-rain',
-            type: 'Heavy Rain',
-            category: 'Heavy Rain',
-            severity: 'HIGH',
-            title: 'Heavy Rainfall Probability',
-            location: snapshot?.location?.name || 'Current location',
-            timeWindow: 'Late afternoon to evening',
-            reason: 'Rain probability is elevated and precipitation intensity is trending upward.',
-            expectedEffect: 'Periods of heavy rainfall may reduce visibility and outdoor comfort.',
-            source: 'Weather data / AI assessment',
-            timestamp: new Date().toISOString(),
-            icon: '🌧️',
-            status: 'ACTIVE'
-        });
-    }
-
-    if (floodScore >= alertThresholds.floodRisk) {
-        addAlert({
-            id: 'smart-flood-risk',
-            type: 'Flood Risk',
-            category: 'Flood Risk',
-            severity: 'MODERATE',
-            title: 'Flood-Sensitive Conditions',
-            location: snapshot?.location?.name || 'Current location',
-            timeWindow: 'Next 1 to 3 hours',
-            reason: 'Surface runoff risk is elevated due to saturated ground and concentrated rainfall.',
-            expectedEffect: 'Low-lying roads and drainage points may experience temporary flooding.',
-            source: 'Weather data / AI assessment',
-            timestamp: new Date().toISOString(),
-            icon: '🌊',
-            status: 'MONITOR'
-        });
-    }
-
-    if (windSpeed >= alertThresholds.strongWind) {
-        addAlert({
-            id: 'smart-wind',
-            type: 'Strong Wind',
-            category: 'Strong Wind',
-            severity: 'LOW',
-            title: 'Strong Wind Signal',
-            location: snapshot?.location?.name || 'Current location',
-            timeWindow: 'Current to next 6 hours',
-            reason: 'Wind conditions are active enough to influence travel and exposed operations.',
-            expectedEffect: 'Wind may affect open-road travel and outdoor setup.',
-            source: 'Weather data / AI assessment',
-            timestamp: new Date().toISOString(),
-            icon: '💨',
-            status: 'ACTIVE'
-        });
-    }
-
-    if (uvIndex >= alertThresholds.highUv) {
-        addAlert({
-            id: 'smart-uv',
-            type: 'High UV',
-            category: 'High UV',
-            severity: 'LOW',
-            title: 'High UV Exposure',
-            location: snapshot?.location?.name || 'Current location',
-            timeWindow: 'Midday window',
-            reason: 'The daily solar exposure remains elevated due to clear skies and strong daylight intensity.',
-            expectedEffect: 'Sun protection and hydration are recommended during the strongest solar period.',
-            source: 'Weather data / AI assessment',
-            timestamp: new Date().toISOString(),
-            icon: '☀️',
-            status: 'ACTIVE'
-        });
-    }
-
-    if (temperature >= alertThresholds.extremeHeat) {
-        addAlert({
-            id: 'smart-heat',
-            type: 'Extreme Heat',
-            category: 'Extreme Heat',
-            severity: 'MODERATE',
-            title: 'Heat Stress Risk',
-            location: snapshot?.location?.name || 'Current location',
-            timeWindow: 'Afternoon window',
-            reason: 'Surface temperature is elevated enough to increase heat stress risk.',
-            expectedEffect: 'A more uncomfortable outdoor period can develop later in the day.',
-            source: 'Weather data / AI assessment',
-            timestamp: new Date().toISOString(),
-            icon: '🌡️',
-            status: 'MONITOR'
-        });
-    }
-
-    if (alerts.length === 0) {
-        addAlert({
-            id: 'smart-stable',
-            type: 'Stable conditions',
-            category: 'General',
+    if (rainProbability !== null && rainProbability >= 60) {
+        const forecast = (data.hourly || []).slice(0, 6).find(item => Number(item?.precipitationProbability) === rainProbability);
+        addInsight({
+            id: 'insight-rain-probability',
             severity: 'INFO',
-            title: 'Stable conditions',
-            location: snapshot?.location?.name || 'Current location',
-            timeWindow: 'Current period',
-            reason: 'No significant hazard signal is active based on the current weather data.',
-            expectedEffect: 'Routine weather conditions are expected for the immediate period.',
-            source: 'Weather data / AI assessment',
-            timestamp: new Date().toISOString(),
-            icon: '✅',
-            status: 'CLEAR'
+            title: 'Rain probability is elevated',
+            reason: `Precipitation probability reaches ${rainProbability}%${formatTime(forecast?.time) ? ` around ${formatTime(forecast.time)}` : ' in the next six hours'}.`,
+            timeWindow: formatTime(forecast?.time) || 'Next six hours',
+            icon: '🌧️'
+        });
+    }
+
+    if (windSpeed !== null && windSpeed >= alertThresholds.strongWind) {
+        addInsight({
+            id: 'insight-wind-speed',
+            severity: 'INFO',
+            title: 'Wind speed is elevated',
+            reason: `The current forecast wind speed is ${windSpeed} km/h.`,
+            timeWindow: 'Current conditions',
+            icon: '💨'
+        });
+    }
+
+    if (uvIndex !== null && uvIndex >= alertThresholds.highUv) {
+        addInsight({
+            id: 'insight-uv-index',
+            severity: 'INFO',
+            title: 'UV index is high',
+            reason: `The current hourly forecast reports a UV index of ${uvIndex}.`,
+            timeWindow: 'Current forecast hour',
+            icon: '☀️'
+        });
+    }
+
+    if (temperature !== null && temperature >= alertThresholds.extremeHeat) {
+        addInsight({
+            id: 'insight-temperature',
+            severity: 'INFO',
+            title: 'Air temperature is elevated',
+            reason: `The current forecast air temperature is ${temperature}°C.`,
+            timeWindow: 'Current conditions',
+            icon: '🌡️'
         });
     }
 
@@ -446,13 +340,15 @@ export function buildSmartAlerts(data) {
 }
 
 export function buildLocationComparison(data) {
-    const currentName = data?.snapshot?.location?.name || 'Nellore';
-    const locations = [
-        { name: currentName, temperature: Number(data?.snapshot?.temperature || 31), rain: Math.min(95, Number(data?.snapshot?.humidity || 72)), humidity: Number(data?.snapshot?.humidity || 78), wind: Number(data?.snapshot?.windSpeed || 18), uv: Number(data?.snapshot?.uvIndex || 7) },
-        { name: 'Tirupati', temperature: 29, rain: 42, humidity: 72, wind: 11, uv: 6 },
-        { name: 'Vijayawada', temperature: 32, rain: 28, humidity: 69, wind: 15, uv: 8 },
-        { name: 'Chennai', temperature: 33, rain: 36, humidity: 76, wind: 16, uv: 8 }
-    ];
-
-    return locations;
+    const snapshot = data?.snapshot;
+    if (!snapshot?.available || snapshot.isDemo) return [];
+    const rainProbability = getMaxRainProbability(data);
+    return [{
+        name: snapshot.location?.name || 'Current location',
+        temperature: isNumber(snapshot.temperature) ? Number(snapshot.temperature) : null,
+        rain: rainProbability,
+        humidity: isNumber(snapshot.humidity) ? Number(snapshot.humidity) : null,
+        wind: isNumber(snapshot.windSpeed) ? Number(snapshot.windSpeed) : null,
+        uv: isNumber(snapshot.uvIndex) ? Number(snapshot.uvIndex) : null
+    }];
 }

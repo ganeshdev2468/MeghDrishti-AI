@@ -15,8 +15,7 @@ import {
     buildLocationComparison,
     buildNwpModelCenter,
     buildSmartAlerts,
-    buildWeatherStory,
-    alertThresholds
+    buildWeatherStory
 } from './aiInsights.js';
 
 class MeghDrishtiApp {
@@ -28,15 +27,8 @@ class MeghDrishtiApp {
         this.leafletMap = null;
         this.mapMarker = null;
         this.mapLayerGroup = null;
-        this.radarAnimationTimer = null;
-        this.radarAngle = 0;
         this.searchDebounceTimer = null;
         this.activeRoute = null;
-
-        // Interactive stress-test values
-        this.stressRainRate = 65; // mm/hr
-        this.stressReturnPeriod = 25; // years
-
         this.router = new Router((route, params) => this.handleRoute(route, params));
     }
 
@@ -49,7 +41,6 @@ class MeghDrishtiApp {
         this.setupModeToggle();
         this.setupSettingsEvents();
         this.startUtcClock();
-
         this.router.init();
     }
 
@@ -65,16 +56,11 @@ class MeghDrishtiApp {
         }
     }
 
-    /**
-     * Start live UTC clock for the auth hero pane
-     */
+    /** Start live UTC clock for the auth hero pane. */
     startUtcClock() {
         const updateUtc = () => {
             const el = document.getElementById('auth-live-time');
-            if (el) {
-                const now = new Date();
-                el.textContent = `${now.toISOString().slice(11, 19)} UTC`;
-            }
+            if (el) el.textContent = `${new Date().toISOString().slice(11, 19)} UTC`;
         };
         updateUtc();
         setInterval(updateUtc, 1000);
@@ -157,7 +143,7 @@ class MeghDrishtiApp {
                 setTimeout(() => this.initOrUpdateMap(), 150);
                 break;
             case '/radar':
-                setTimeout(() => this.initRadarScope(), 150);
+                this.renderRadarView(this.weatherData);
                 break;
             case '/satellite':
                 this.renderSatelliteView(this.weatherData);
@@ -195,13 +181,14 @@ class MeghDrishtiApp {
     /**
      * Fetch weather telemetry for current location
      */
-    async loadWeatherForCurrentLocation() {
+    async loadWeatherForCurrentLocation(forceRefresh = false) {
         const refreshBtn = document.getElementById('btn-refresh-now');
         if (refreshBtn) refreshBtn.classList.add('spinning');
 
         try {
-            this.weatherData = await weatherService.getWeather(this.currentLocation);
-            this.lastFetchTime = new Date();
+            this.weatherData = await weatherService.getWeather(this.currentLocation, { forceRefresh });
+            const retrievedAt = this.weatherData.snapshot?.provenance?.timestamp;
+            this.lastFetchTime = retrievedAt ? new Date(retrievedAt) : null;
 
             this.startLocationClock(this.weatherData.snapshot.timezone);
 
@@ -217,7 +204,7 @@ class MeghDrishtiApp {
             this.updateModeIndicators();
         } catch (error) {
             console.error('Failed to load weather:', error);
-            this.showGlobalToast('Telemetry temporarily unavailable. Using calibrated fallback.', 'error');
+            this.showGlobalToast('Live weather data is unavailable. Check your connection and retry.', 'error');
         } finally {
             if (refreshBtn) refreshBtn.classList.remove('spinning');
         }
@@ -274,7 +261,7 @@ class MeghDrishtiApp {
      * Render the main operations dashboard
      */
     renderDashboard(data) {
-        const { snapshot, hourly, daily, nowcast, floodRisk, alerts, groundObservations, radar } = data;
+        const { snapshot, hourly, daily, nowcast, alerts } = data;
         const prefs = StorageService.getPreferences();
 
         // 1. Header & Location titles
@@ -283,13 +270,13 @@ class MeghDrishtiApp {
         
         document.getElementById('dash-city-title').textContent = fullLocName;
         document.getElementById('topbar-location-name').textContent = fullLocName;
-        document.getElementById('dash-coordinates').textContent = 
-            `${snapshot.location.lat.toFixed(4)}° N, ${snapshot.location.lon.toFixed(4)}° E (Elev: ${snapshot.location.elevation}m)`;
+        document.getElementById('dash-coordinates').textContent =
+            `${snapshot.location.lat.toFixed(4)}° N, ${snapshot.location.lon.toFixed(4)}° E${snapshot.location.elevation != null ? ` (Elev: ${snapshot.location.elevation}m)` : ''}`;
         document.getElementById('dash-data-source').textContent = snapshot.source;
         const qualityBadge = document.getElementById('dash-data-qc');
         if (qualityBadge) {
-            qualityBadge.textContent = snapshot.isDemo ? 'DEMO / FALLBACK' : 'OPEN-METEO FORECAST';
-            qualityBadge.className = `status-badge ${snapshot.isDemo ? 'status-suspect' : 'status-good'}`;
+            qualityBadge.textContent = snapshot.isDemo ? 'DEMO DATA' : snapshot.available ? 'OPEN-METEO FORECAST' : 'WEATHER UNAVAILABLE';
+            qualityBadge.className = `status-badge ${snapshot.isDemo ? 'status-suspect' : snapshot.available ? 'status-good' : 'status-suspect'}`;
         }
 
         // 2. Primary Hero Weather Card
@@ -301,62 +288,71 @@ class MeghDrishtiApp {
         if (daily.length) {
             document.getElementById('hero-temp-max').textContent = weatherService.formatTemp(daily[0].maxTemp, prefs.temperature);
             document.getElementById('hero-temp-min').textContent = weatherService.formatTemp(daily[0].minTemp, prefs.temperature);
+        } else {
+            document.getElementById('hero-temp-max').textContent = '—';
+            document.getElementById('hero-temp-min').textContent = '—';
         }
 
         // 3. Operational 8 Metrics Grid
-        document.getElementById('metric-humidity').textContent = `${snapshot.humidity}%`;
-        document.getElementById('metric-dewpoint').textContent = weatherService.formatTemp(snapshot.temperature - ((100 - snapshot.humidity) / 5), prefs.temperature);
+        document.getElementById('metric-humidity').textContent = snapshot.humidity == null ? '—' : `${snapshot.humidity}%`;
+        let dewPoint = null;
+        if (Number.isFinite(snapshot.temperature) && Number.isFinite(snapshot.humidity) && snapshot.humidity > 0 && snapshot.humidity <= 100) {
+            const gamma = Math.log(snapshot.humidity / 100) + (17.625 * snapshot.temperature) / (243.04 + snapshot.temperature);
+            dewPoint = (243.04 * gamma) / (17.625 - gamma);
+        }
+        document.getElementById('metric-dewpoint').textContent = weatherService.formatTemp(dewPoint, prefs.temperature);
         document.getElementById('metric-pressure').textContent = weatherService.formatPressure(snapshot.pressure, prefs.pressure);
         
-        const windCompass = weatherService.degToCompass(snapshot.windDirection);
         document.getElementById('metric-wind').textContent = weatherService.formatWind(snapshot.windSpeed, prefs.windSpeed);
-        document.getElementById('metric-wind-dir').textContent = `${windCompass} (${snapshot.windDirection.toFixed(0)}°)`;
+        const windDirection = Number.isFinite(snapshot.windDirection)
+            ? `${weatherService.degToCompass(snapshot.windDirection)} (${snapshot.windDirection.toFixed(0)}°)`
+            : 'Direction unavailable';
+        document.getElementById('metric-wind-dir').textContent = windDirection;
         document.getElementById('metric-gusts').textContent = weatherService.formatWind(snapshot.windGust, prefs.windSpeed);
-        
-        document.getElementById('metric-precip').textContent = weatherService.formatPrecip(snapshot.precipitation, prefs.precipitation) + '/hr';
-        document.getElementById('metric-visibility').textContent = `${snapshot.visibility.toFixed(1)} km`;
-        document.getElementById('metric-vis-quality').textContent = snapshot.visibility > 5 ? 'High transparency' : 'Reduced visibility';
-        
-        document.getElementById('metric-uv').textContent = snapshot.uvIndex ? snapshot.uvIndex.toFixed(1) : '0';
-        document.getElementById('metric-uv-level').textContent = snapshot.uvIndex > 7 ? 'High / Protective cover' : 'Moderate solar risk';
-        
-        document.getElementById('metric-cloudcover').textContent = `${snapshot.cloudCover}%`;
+
+        document.getElementById('metric-precip').textContent = weatherService.formatPrecip(snapshot.precipitation, prefs.precipitation);
+        document.getElementById('metric-visibility').textContent = Number.isFinite(snapshot.visibility) ? `${snapshot.visibility.toFixed(1)} km` : '—';
+        document.getElementById('metric-vis-quality').textContent = Number.isFinite(snapshot.visibility) ? 'Open-Meteo hourly forecast' : 'Unavailable';
+
+        document.getElementById('metric-uv').textContent = Number.isFinite(snapshot.uvIndex) ? snapshot.uvIndex.toFixed(1) : '—';
+        document.getElementById('metric-uv-level').textContent = Number.isFinite(snapshot.uvIndex) ? 'Hourly forecast' : 'Unavailable';
+
+        document.getElementById('metric-cloudcover').textContent = snapshot.cloudCover == null ? '—' : `${snapshot.cloudCover}%`;
         if (snapshot.sunrise && snapshot.sunset) {
             const sr = snapshot.sunrise.slice(11, 16);
             const ss = snapshot.sunset.slice(11, 16);
             document.getElementById('metric-sun-times').textContent = `☀️ ${sr} • 🌙 ${ss}`;
+        } else {
+            document.getElementById('metric-sun-times').textContent = 'Unavailable';
         }
 
-        // 4. Heavy Rainfall Monitor
-        const curRate = snapshot.precipitation > 0 ? snapshot.precipitation : radar.rainfallRateEstimated;
-        document.getElementById('rf-current-rate').textContent = `${curRate.toFixed(1)} mm/hr`;
-        document.getElementById('rf-1h-acc').textContent = `${groundObservations.accumulations.r1h.toFixed(1)} mm`;
-        document.getElementById('rf-3h-acc').textContent = `${groundObservations.accumulations.r3h.toFixed(1)} mm`;
-        document.getElementById('rf-6h-acc').textContent = `${groundObservations.accumulations.r6h.toFixed(1)} mm`;
-        document.getElementById('rf-24h-acc').textContent = `${groundObservations.accumulations.r24h.toFixed(1)} mm`;
-        
-        const intensityTag = curRate > 50 ? 'Extremely Heavy' : (curRate > 25 ? 'Very Heavy' : (curRate > 10 ? 'Heavy Rain' : 'Moderate'));
-        document.getElementById('rf-intensity-tag').textContent = intensityTag;
+        // 4. Open-Meteo precipitation and unsupported accumulation/anomaly data
+        document.getElementById('rf-current-rate').textContent = weatherService.formatPrecip(snapshot.precipitation, prefs.precipitation);
+        document.getElementById('rf-intensity-tag').textContent = 'Current forecast interval';
+        ['rf-1h-acc', 'rf-3h-acc', 'rf-6h-acc', 'rf-24h-acc'].forEach(id => {
+            document.getElementById(id).textContent = 'Unavailable';
+        });
+        const anomaly = document.getElementById('rf-anomaly');
+        if (anomaly) anomaly.textContent = 'BASELINE UNAVAILABLE';
 
         this.renderDashboardAiSummary(data);
 
-        // 5. Inundation & Hydrodynamic Flood Risk Card
-        document.getElementById('flood-risk-score').textContent = floodRisk.score;
+        // 5. Flood-risk model is not connected
+        document.getElementById('flood-risk-score').textContent = '—';
         const riskLevelEl = document.getElementById('flood-risk-level');
-        riskLevelEl.textContent = `${floodRisk.level} RISK`;
-        riskLevelEl.className = `risk-level-badge level-${floodRisk.level.toLowerCase().replace(' ', '-')}`;
-        document.getElementById('flood-affected-area').textContent = `${floodRisk.affectedAreaKm2} km²`;
-        document.getElementById('flood-time-window').textContent = floodRisk.timeWindow;
-        document.getElementById('flood-confidence').textContent = floodRisk.confidence;
-
+        riskLevelEl.textContent = 'MODEL UNAVAILABLE';
+        riskLevelEl.className = 'risk-level-badge';
+        document.getElementById('flood-affected-area').textContent = 'Unavailable';
+        document.getElementById('flood-time-window').textContent = 'Unavailable';
+        document.getElementById('flood-confidence').textContent = 'Unavailable';
         const xaiList = document.getElementById('flood-xai-factors');
         if (xaiList) {
-            xaiList.innerHTML = floodRisk.contributingFactors.map(f => `<li>${f}</li>`).join('');
+            xaiList.innerHTML = '<li>Live flood-risk modeling is not currently connected.</li><li>Open-Meteo weather values provide context only and are not an official flood warning.</li>';
         }
 
         // 6. Nowcast Track (15m to 180m)
         const nowcastContainer = document.getElementById('nowcast-step-container');
-        if (nowcastContainer && nowcast.nowcastSteps) {
+        if (nowcastContainer && nowcast.nowcastSteps?.length) {
             nowcastContainer.innerHTML = nowcast.nowcastSteps.map(step => `
                 <div class="nowcast-card">
                     <span class="nc-lead">${step.label}</span>
@@ -366,6 +362,8 @@ class MeghDrishtiApp {
                     <span style="font-size:0.65rem; color:var(--text-muted);">${step.intensityClassification}</span>
                 </div>
             `).join('');
+        } else if (nowcastContainer) {
+            nowcastContainer.innerHTML = '<div class="empty-state-box"><strong>NOWCAST UNAVAILABLE</strong><p>A radar-based short-term precipitation nowcast is not connected.</p></div>';
         }
 
         // 7. Active Warnings: Official vs AI Warnings
@@ -387,25 +385,27 @@ class MeghDrishtiApp {
 
         const aiContainer = document.getElementById('ai-alerts-container');
         if (aiContainer) {
-            aiContainer.innerHTML = alerts.aiEarlyWarnings.map(aw => `
+            const weatherInsights = buildSmartAlerts(data);
+            aiContainer.innerHTML = weatherInsights.length ? weatherInsights.map(insight => `
                 <div style="background:var(--surface-slate-2); border-left:4px solid #38bdf8; padding:12px; border-radius:4px; margin-bottom:10px;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                        <strong style="color:#38bdf8; font-size:0.85rem;">${aw.headline}</strong>
-                        <span class="mono" style="font-size:0.68rem; color:#38bdf8;">SCORE ${aw.riskScore}</span>
+                        <strong style="color:#38bdf8; font-size:0.85rem;">${insight.title}</strong>
+                        <span class="mono" style="font-size:0.68rem; color:#38bdf8;">AI WEATHER INSIGHT</span>
                     </div>
                     <p style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:6px;">
-                        Confidence: ${aw.confidence} • Expected Window: ${aw.timeWindow}
+                        ${insight.reason}
                     </p>
                     <div style="font-size:0.7rem; color:var(--text-muted); font-family:monospace;">
-                        Scenario source: ${aw.engine} (illustrative demo values, not a model output)
+                        Based on Open-Meteo forecast data. Advisory only; not an official warning.
                     </div>
                 </div>
-            `).join('');
+            `).join('') : '<p class="empty-alerts-box">No thresholded AI weather insight is available from the current forecast variables.</p>';
         }
 
         // 8. Hourly Forecast Scroll
         const hourlyContainer = document.getElementById('hourly-forecast-track');
         hourlyContainer.innerHTML = '';
+        if (!hourly.length) hourlyContainer.innerHTML = '<div class="empty-state-box">Open-Meteo hourly forecast data is unavailable.</div>';
         hourly.forEach(item => {
             const hourDiv = document.createElement('div');
             hourDiv.className = 'hourly-item';
@@ -423,6 +423,7 @@ class MeghDrishtiApp {
         // 9. Daily Forecast List
         const dailyContainer = document.getElementById('daily-forecast-container');
         dailyContainer.innerHTML = '';
+        if (!daily.length) dailyContainer.innerHTML = '<div class="empty-state-box">Open-Meteo daily forecast data is unavailable.</div>';
         daily.forEach((d, idx) => {
             const dateObj = new Date(d.date);
             const dayName = idx === 0 ? 'Today' : dateObj.toLocaleDateString('en-US', { weekday: 'short' });
@@ -441,9 +442,9 @@ class MeghDrishtiApp {
                 </div>
                 <div class="d-pop-bar-wrap">
                     <div class="d-pop-track">
-                        <div class="d-pop-fill" style="width:${d.rainProbability}%;"></div>
+                        <div class="d-pop-fill" style="width:${d.rainProbability ?? 0}%;"></div>
                     </div>
-                    <span class="d-pop-val mono">${d.rainProbability}%</span>
+                    <span class="d-pop-val mono">${d.rainProbability == null ? '—' : `${d.rainProbability}%`}</span>
                 </div>
                 <div class="d-temp-range">
                     <span class="d-max-temp">${weatherService.formatTemp(d.maxTemp, prefs.temperature)}</span>
@@ -452,6 +453,16 @@ class MeghDrishtiApp {
             `;
             dailyContainer.appendChild(row);
         });
+
+        const dashboard = document.getElementById('view-dashboard');
+        [
+            document.getElementById('dashboard-hourly'),
+            document.getElementById('dashboard-daily'),
+            document.getElementById('dashboard-ai-summary'),
+            document.getElementById('dashboard-precip-risk'),
+            document.getElementById('dashboard-nowcast'),
+            document.getElementById('dashboard-alert-panels')
+        ].filter(Boolean).forEach(section => dashboard.appendChild(section));
     }
 
     renderDashboardAiSummary(data) {
@@ -463,121 +474,48 @@ class MeghDrishtiApp {
         const html = `
             <div id="dashboard-ai-summary" class="dashboard-ai-summary">
                 <div class="ai-summary-header">
-                    <span class="ai-summary-label">MEGHDRISHTI AI INSIGHT</span>
-                    <span class="ai-summary-score">${assessment.overallRiskScore}/100</span>
+                    <span class="ai-summary-label">AI WEATHER INSIGHT</span>
+                    <span class="mono">${assessment.available ? 'ADVISORY' : 'UNAVAILABLE'}</span>
                 </div>
                 <div class="ai-summary-body">
                     <div>
-                        <div class="ai-summary-status">${assessment.overallRiskLabel}</div>
                         <p>${assessment.summary}</p>
-                    </div>
-                    <div class="ai-confidence-block">
-                        <span>Confidence</span>
-                        <strong>${assessment.confidence}%</strong>
-                        <div class="ai-confidence-bar">
-                            <span style="width:${assessment.confidence}%"></span>
-                        </div>
+                        ${assessment.insights.map(insight => `
+                            <div class="ai-insight-line">
+                                <strong>${insight.title}</strong>
+                                <p>${insight.detail}</p>
+                                <span>Based on: ${insight.basis.join(', ')}</span>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
+                <small>Analytical guidance only; not an official warning.</small>
             </div>
         `;
 
-        if (card) {
-            card.outerHTML = html;
-        } else {
-            target.insertAdjacentHTML('afterend', html);
-        }
+        if (card) card.outerHTML = html;
+        else target.insertAdjacentHTML('afterend', html);
     }
 
     /**
      * Render Radar Operations Scope View
      */
     renderRadarView(data) {
-        const { radar } = data;
         const container = document.getElementById('radar-view-container');
         if (!container) return;
 
-        const statusLabel = radar?.provenance?.source ? radar.provenance.source : 'DEMO DATA';
-
         container.innerHTML = `
-            <div class="dash-two-col">
-                <div class="section-card radar-placeholder-shell">
-                    <div class="section-card-header">
-                        <div class="section-card-title">
-                            <span>Weather Radar</span>
-                        </div>
-                        <div class="data-status status-demo">
-                            <span class="status-dot"></span>
-                            <span>DEMO DATA</span>
-                        </div>
-                    </div>
-
-                    <div class="radar-placeholder-panel" aria-live="polite">
-                        <div class="radar-preview-surface" aria-label="Radar preview placeholder">
-                            <div class="radar-grid"></div>
-                            <span class="radar-ring ring-one"></span>
-                            <span class="radar-ring ring-two"></span>
-                            <span class="radar-ring ring-three"></span>
-                            <span class="radar-ring ring-four"></span>
-                            <span class="radar-sweep"></span>
-                            <span class="radar-core"></span>
-                            <span class="radar-bubble bubble-a"></span>
-                            <span class="radar-bubble bubble-b"></span>
-                            <span class="radar-bubble bubble-c"></span>
-                            <span class="radar-bubble bubble-d"></span>
-                            <span class="radar-overlay-label">Radar feed not connected</span>
-                        </div>
-
-                        <div class="radar-placeholder-meta">
-                            <div>
-                                <span class="meta-label">Status</span>
-                                <strong>Awaiting live feed</strong>
-                            </div>
-                            <div>
-                                <span class="meta-label">Last update</span>
-                                <strong>${new Date(radar?.provenance?.validTime || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
-                            </div>
-                            <div>
-                                <span class="meta-label">Source</span>
-                                <strong>${statusLabel}</strong>
-                            </div>
-                        </div>
-
-                        <div class="empty-state-actions">
-                            <button class="btn-secondary" type="button" onclick="window.location.hash = '#/map';">Explore Weather Map</button>
-                        </div>
-                    </div>
+            <div class="section-card">
+                <div class="section-card-header">
+                    <div class="section-card-title"><span>RADAR</span></div>
+                    <span class="mono">LIVE FEED UNAVAILABLE</span>
                 </div>
-
-                <div class="section-card">
-                    <div class="section-card-header">
-                        <div class="section-card-title">
-                            <span>Radar readiness</span>
-                        </div>
-                        <span class="mono small-muted">Phase 1 placeholder</span>
-                    </div>
-
-                    <div class="rainfall-accum-grid">
-                        <div class="accum-item">
-                            <span class="accum-lbl">Feed status</span>
-                            <span class="accum-val">Offline</span>
-                            <span class="accum-sub">No live radar connected</span>
-                        </div>
-                        <div class="accum-item">
-                            <span class="accum-lbl">Coverage</span>
-                            <span class="accum-val">250 km</span>
-                            <span class="accum-sub">Prepared for future feed</span>
-                        </div>
-                        <div class="accum-item">
-                            <span class="accum-lbl">Refresh</span>
-                            <span class="accum-val">N/A</span>
-                            <span class="accum-sub">Awaiting source</span>
-                        </div>
-                        <div class="accum-item">
-                            <span class="accum-lbl">Data note</span>
-                            <span class="accum-val">Demo</span>
-                            <span class="accum-sub">Illustrative only</span>
-                        </div>
+                <div class="radar-placeholder-panel" aria-live="polite" style="min-height:360px; display:grid; place-items:center;">
+                    <div class="empty-state-box">
+                        <strong>LIVE FEED UNAVAILABLE</strong>
+                        <p>Radar imagery is not connected to a live meteorological provider.</p>
+                        <p>Data status: UNAVAILABLE</p>
+                        <a class="btn-secondary" href="#/map">Open location map</a>
                     </div>
                 </div>
             </div>
@@ -585,143 +523,22 @@ class MeghDrishtiApp {
     }
 
     /**
-     * Animate interactive PPI Doppler Radar Canvas
-     */
-    initRadarScope() {
-        const canvas = document.getElementById('radar-canvas-element');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        if (this.radarAnimationTimer) cancelAnimationFrame(this.radarAnimationTimer);
-
-        const width = canvas.width;
-        const height = canvas.height;
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const radius = width / 2 - 10;
-
-        const animate = () => {
-            this.radarAngle = (this.radarAngle + 0.025) % (Math.PI * 2);
-
-            ctx.clearRect(0, 0, width, height);
-
-            // 1. Draw Range Rings (50km, 100km, 150km, 200km)
-            ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
-            ctx.lineWidth = 1;
-            for (let r = 50; r <= radius; r += radius / 4) {
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-
-            // 2. Azimuth Crosshairs
-            ctx.beginPath();
-            ctx.moveTo(centerX - radius, centerY);
-            ctx.lineTo(centerX + radius, centerY);
-            ctx.moveTo(centerX, centerY - radius);
-            ctx.lineTo(centerX, centerY + radius);
-            ctx.stroke();
-
-            // 3. Draw Synthetic/Observed Convective Reflectivity Blobs
-            const clusters = [
-                { x: centerX + 50, y: centerY - 45, r: 42, color: 'rgba(239, 68, 68, 0.75)' },
-                { x: centerX + 75, y: centerY - 30, r: 26, color: 'rgba(249, 115, 22, 0.65)' },
-                { x: centerX - 60, y: centerY + 50, r: 35, color: 'rgba(234, 179, 8, 0.6)' },
-                { x: centerX - 30, y: centerY - 70, r: 28, color: 'rgba(16, 185, 129, 0.5)' }
-            ];
-
-            clusters.forEach(c => {
-                const grad = ctx.createRadialGradient(c.x, c.y, 2, c.x, c.y, c.r);
-                grad.addColorStop(0, c.color);
-                grad.addColorStop(1, 'transparent');
-                ctx.fillStyle = grad;
-                ctx.beginPath();
-                ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
-                ctx.fill();
-            });
-
-            // 4. Rotating Radar Sweep Beam
-            const beamX = centerX + Math.cos(this.radarAngle) * radius;
-            const beamY = centerY + Math.sin(this.radarAngle) * radius;
-
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.arc(centerX, centerY, radius, this.radarAngle - 0.25, this.radarAngle);
-            ctx.closePath();
-
-            const sweepGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-            sweepGrad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
-            sweepGrad.addColorStop(1, 'rgba(56, 189, 248, 0.02)');
-            ctx.fillStyle = sweepGrad;
-            ctx.fill();
-
-            // Leading Sweep Line
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.lineTo(beamX, beamY);
-            ctx.strokeStyle = '#38bdf8';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Center Radar Beacon
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
-            ctx.fillStyle = '#38bdf8';
-            ctx.fill();
-
-            this.radarAnimationTimer = requestAnimationFrame(animate);
-        };
-
-        animate();
-    }
-
-    /**
      * Render Satellite Telemetry View
      */
     renderSatelliteView(data) {
-        const { satellite } = data;
         const container = document.getElementById('satellite-view-container');
         if (!container) return;
 
         container.innerHTML = `
-            <div class="section-card" style="margin-bottom:16px;">
+            <div class="section-card">
                 <div class="section-card-header">
-                    <div class="section-card-title">
-                        <span>🛰️ ${satellite.satellite}</span>
-                    </div>
-                    <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">${satellite.sensor}</span>
+                    <div class="section-card-title"><span>SATELLITE</span></div>
+                    <span class="mono">LIVE IMAGERY UNAVAILABLE</span>
                 </div>
-                <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:6px;">
-                    Spatial Coverage: <strong>${satellite.coverage}</strong> • Spatial Resolution: <strong>${satellite.provenance.spatialResolution}</strong> • Repeat Scan: <strong>${satellite.provenance.temporalResolution}</strong>
-                </p>
-            </div>
-
-            <div class="satellite-grid">
-                ${satellite.channels.map(ch => `
-                    <div class="sat-channel-card">
-                        <div class="sat-channel-header">
-                            <span class="sat-channel-title">${ch.name}</span>
-                            <span class="sat-channel-badge">${ch.processingLevel}</span>
-                        </div>
-                        <div class="sat-value-row">${ch.value}</div>
-                        <div class="sat-desc">${ch.product}: <strong>${ch.status}</strong></div>
-                        <div style="font-size:0.7rem; color:var(--text-muted); font-family:monospace; margin-top:auto;">
-                            Native Grid: ${ch.resolution}
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-
-            <div class="section-card" style="margin-top:16px;">
-                <div style="font-size:0.8rem; font-weight:700; color:var(--cyan-primary); margin-bottom:6px;">
-                    SATELLITE DATA ATTRIBUTION & SCIENTIFIC PROVENANCE
-                </div>
-                <div class="mono" style="font-size:0.75rem; color:var(--text-secondary); line-height:1.6;">
-                    Source: ${satellite.provenance.source}<br>
-                    Processing Level: ${satellite.provenance.processingLevel}<br>
-                    Acquisition Time: ${new Date(satellite.provenance.timestamp).toUTCString()} (Radiance Calibrated)<br>
-                    Provenance Category: ${satellite.provenance.provenanceType}
+                <div class="empty-state-box">
+                    <strong>LIVE IMAGERY UNAVAILABLE</strong>
+                    <p>Satellite imagery provider is not currently connected.</p>
+                    <p>Data status: UNAVAILABLE</p>
                 </div>
             </div>
         `;
@@ -755,8 +572,8 @@ class MeghDrishtiApp {
             return;
         }
 
-        const rangeTemp = Math.max(...modelInfo.models.map(m => Number(m.tempC || 0))) - Math.min(...modelInfo.models.map(m => Number(m.tempC || 0)));
-        const rangeRain = Math.max(...modelInfo.models.map(m => Number(m.precip24hMm || 0))) - Math.min(...modelInfo.models.map(m => Number(m.precip24hMm || 0)));
+        const rangeTemp = Math.max(...modelInfo.models.map(m => Number(m.tempC))) - Math.min(...modelInfo.models.map(m => Number(m.tempC)));
+        const rangeRain = Math.max(...modelInfo.models.map(m => Number(m.precip24hMm))) - Math.min(...modelInfo.models.map(m => Number(m.precip24hMm)));
 
         container.innerHTML = `
             <div class="section-card" style="margin-bottom:16px;">
@@ -767,8 +584,9 @@ class MeghDrishtiApp {
                     <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">COMPARE NUMERICAL WEATHER PREDICTION GUIDANCE</span>
                 </div>
                 <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:8px; line-height:1.6;">
-                    ${nwp?.synopticDiagnosis || 'Model comparison is based on the currently available local forecast ensemble.'}
+                    ${nwp?.synopticDiagnosis || 'Model comparison is based on connected model outputs.'}
                 </p>
+                <p class="small-muted">Source: ${nwp.provenance.source} · Retrieved ${new Date(nwp.provenance.timestamp).toLocaleString()}</p>
             </div>
 
             <div class="dash-two-col">
@@ -814,15 +632,14 @@ class MeghDrishtiApp {
                                     <strong>${model.name}</strong>
                                     <span>${model.agency}</span>
                                 </div>
-                                <em>${model.confidence}</em>
                             </div>
                             <div class="nwp-metrics">
                                 <div><span>Temperature</span><strong>${model.tempC}°C</strong></div>
-                                <div><span>Rain probability</span><strong>${model.cloudburstProbability}%</strong></div>
+                                <div><span>Rain probability</span><strong>${model.cloudburstProbability == null ? '—' : `${model.cloudburstProbability}%`}</strong></div>
                                 <div><span>Rainfall</span><strong>${model.precip24hMm} mm</strong></div>
-                                <div><span>Wind</span><strong>${model.windKmh || 18} km/h</strong></div>
-                                <div><span>Pressure</span><strong>${model.pressureHpa || 1006} hPa</strong></div>
-                                <div><span>Humidity</span><strong>${model.humidityPct || 78}%</strong></div>
+                                <div><span>Wind</span><strong>${model.windKmh == null ? '—' : `${model.windKmh} km/h`}</strong></div>
+                                <div><span>Pressure</span><strong>${model.pressureHpa == null ? '—' : `${model.pressureHpa} hPa`}</strong></div>
+                                <div><span>Humidity</span><strong>${model.humidityPct == null ? '—' : `${model.humidityPct}%`}</strong></div>
                             </div>
                         </article>
                     `).join('')}
@@ -835,52 +652,55 @@ class MeghDrishtiApp {
      * Render Heavy Rainfall Operations Center
      */
     renderRainfallView(data) {
-        const { snapshot, groundObservations, nowcast, radar } = data;
+        const { snapshot, hourly = [], daily = [] } = data;
         const container = document.getElementById('rainfall-view-container');
         if (!container) return;
 
-        const curRain = snapshot.precipitation > 0 ? snapshot.precipitation : radar.rainfallRateEstimated;
+        const nextHours = hourly.slice(0, 6);
+        const probabilities = nextHours.map(item => item.precipitationProbability).filter(value => value != null);
+        const maxProbability = probabilities.length ? Math.max(...probabilities) : null;
+        const today = daily[0];
 
         container.innerHTML = `
             <div class="dash-two-col">
                 <div class="section-card">
                     <div class="section-card-header">
                         <div class="section-card-title">
-                            <span>🌧️ Illustrative Rainfall Examples</span>
+                            <span>🌧️ Open-Meteo Precipitation</span>
                         </div>
-                        <span class="mono badge-ai">STATIC DEMO VALUES</span>
+                        <span class="mono">LIVE FORECAST</span>
                     </div>
 
                     <div class="rainfall-accum-grid">
                         <div class="accum-item">
-                            <span class="accum-lbl">Current Rate</span>
-                            <span class="accum-val" style="color:#ef4444;">${curRain.toFixed(1)} mm/hr</span>
-                            <span class="accum-sub">Instantaneous telemetry</span>
+                            <span class="accum-lbl">Current precipitation</span>
+                            <span class="accum-val">${weatherService.formatPrecip(snapshot.precipitation, StorageService.getPreferences().precipitation)}</span>
+                            <span class="accum-sub">Open-Meteo current interval, not a rate</span>
                         </div>
                         <div class="accum-item">
-                            <span class="accum-lbl">1-Hour Acc.</span>
-                            <span class="accum-val">${groundObservations.accumulations.r1h} mm</span>
-                            <span class="accum-sub">Past 60 min</span>
+                            <span class="accum-lbl">Next 6-hour precipitation probability</span>
+                            <span class="accum-val">${maxProbability == null ? 'Unavailable' : `${maxProbability}%`}</span>
+                            <span class="accum-sub">Maximum hourly forecast probability</span>
                         </div>
                         <div class="accum-item">
                             <span class="accum-lbl">3-Hour Acc.</span>
-                            <span class="accum-val">${groundObservations.accumulations.r3h} mm</span>
-                            <span class="accum-sub">Active cell cluster</span>
+                            <span class="accum-val">Unavailable</span>
+                            <span class="accum-sub">Gauge history not connected</span>
                         </div>
                         <div class="accum-item">
                             <span class="accum-lbl">6-Hour Acc.</span>
-                            <span class="accum-val">${groundObservations.accumulations.r6h} mm</span>
-                            <span class="accum-sub">Synoptic epoch</span>
+                            <span class="accum-val">Unavailable</span>
+                            <span class="accum-sub">Gauge history not connected</span>
                         </div>
                         <div class="accum-item">
                             <span class="accum-lbl">24-Hour Acc.</span>
-                            <span class="accum-val">${groundObservations.accumulations.r24h} mm</span>
-                            <span class="accum-sub">Daily accumulation</span>
+                            <span class="accum-val">${weatherService.formatPrecip(today?.precipitationSum, StorageService.getPreferences().precipitation)}</span>
+                            <span class="accum-sub">Open-Meteo daily forecast total</span>
                         </div>
                         <div class="accum-item">
-                            <span class="accum-lbl">Climatological Anomaly</span>
-                            <span class="accum-val" style="color:#f59e0b;">+185%</span>
-                            <span class="accum-sub">Above normal for date</span>
+                            <span class="accum-lbl">Rainfall Anomaly</span>
+                            <span class="accum-val">BASELINE UNAVAILABLE</span>
+                            <span class="accum-sub">Historical climatology not connected</span>
                         </div>
                     </div>
                 </div>
@@ -890,18 +710,12 @@ class MeghDrishtiApp {
                         <div class="section-card-title">
                             <span>⏱️ 15 to 180 Minute Nowcasting Progression</span>
                         </div>
-                        <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">Semi-Lagrangian Advection</span>
+                        <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">UNAVAILABLE</span>
                     </div>
 
-                    <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
-                        ${nowcast.nowcastSteps.map(step => `
-                            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--surface-slate-2); padding:10px 14px; border-radius:6px; border:1px solid var(--border-subtle);">
-                                <span class="mono" style="font-weight:700; color:var(--cyan-primary); width:70px;">${step.label}</span>
-                                <span class="mono" style="font-size:1.05rem; font-weight:700;">${step.expectedRainfallMmHr} mm/hr</span>
-                                <span class="mono" style="font-size:0.78rem; color:#10b981;">Prob: ${step.probabilityPct}%</span>
-                                <span class="mono" style="font-size:0.72rem; color:var(--text-muted);">${step.confidenceInterval}</span>
-                            </div>
-                        `).join('')}
+                    <div class="empty-state-box" style="margin-top:14px;">
+                        <strong>NOWCAST UNAVAILABLE</strong>
+                        <p>A live radar feed and connected nowcast model are required.</p>
                     </div>
                 </div>
             </div>
@@ -912,236 +726,41 @@ class MeghDrishtiApp {
      * Render Inundation & Hydrodynamic Modeler View
      */
     renderFloodRiskView(data) {
-        const { hydroTerrain, floodRisk } = data;
         const container = document.getElementById('flood-risk-view-container');
         if (!container) return;
 
-        // Peak runoff Q = C * I * A
-        const runoffC = 0.85; // urban concrete runoff coefficient
-        const peakDischarge = (runoffC * (this.stressRainRate / 360) * 42.5).toFixed(1);
-
         container.innerHTML = `
-            <div class="dash-two-col">
-                <div class="section-card">
-                    <div class="section-card-header">
-                        <div class="section-card-title">
-                            <span>🌊 Hydrodynamic Urban Inundation Modeler</span>
-                        </div>
-                            <span class="mono badge-ai">Illustrative scenario</span>
-                    </div>
-
-                    <div class="slider-control-pane" style="margin-top:14px;">
-                        <div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                                <label style="font-size:0.85rem; font-weight:700;">Precipitation Stress-Test Rate:</label>
-                                <span class="mono" id="slider-val-disp" style="font-size:1.1rem; color:var(--cyan-primary); font-weight:700;">${this.stressRainRate} mm/hr</span>
-                            </div>
-                            <input type="range" id="flood-stress-slider" class="stress-slider" min="10" max="250" value="${this.stressRainRate}" step="5">
-                        </div>
-
-                        <div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                                <label style="font-size:0.85rem; font-weight:700;">Return Period (T-Years):</label>
-                                <span class="mono" style="font-size:0.9rem; color:#f59e0b; font-weight:700;">T = ${this.stressReturnPeriod} Years</span>
-                            </div>
-                            <div style="display:flex; gap:8px;">
-                                ${[2, 5, 10, 25, 50, 100].map(yr => `
-                                    <button class="btn-triage ${yr === this.stressReturnPeriod ? 'active' : ''}" data-return-period="${yr}">
-                                        ${yr}Y
-                                    </button>
-                                `).join('')}
-                            </div>
-                        </div>
-
-                        <div style="display:flex; gap:10px; margin-top:8px;">
-                            <button id="btn-export-geojson" class="btn-primary" style="flex:1;">
-                                <span>📥 Export RFC 7946 GeoJSON GIS Extents</span>
-                            </button>
-                        </div>
-                    </div>
+            <div class="section-card">
+                <div class="section-card-header">
+                    <div class="section-card-title"><span>FLOOD RISK</span></div>
+                    <span class="mono">MODEL UNAVAILABLE</span>
                 </div>
-
-                <div class="section-card">
-                    <div class="section-card-header">
-                        <div class="section-card-title">
-                            <span>📊 Computed Hydrodynamic Risk Extents</span>
-                        </div>
-                        <span class="mono" style="color:#ef4444; font-size:0.75rem;">${floodRisk.level} RISK</span>
-                    </div>
-
-                    <div class="rainfall-accum-grid">
-                        <div class="accum-item">
-                            <span class="accum-lbl">Peak Runoff Discharge</span>
-                            <span class="accum-val" id="peak-runoff-val">${peakDischarge} m³/s</span>
-                            <span class="accum-sub">Q = CIA Model</span>
-                        </div>
-                        <div class="accum-item">
-                            <span class="accum-lbl">Flooded Area Estimate</span>
-                            <span class="accum-val" id="flooded-area-val">${(this.stressRainRate * 0.58).toFixed(1)} km²</span>
-                            <span class="accum-sub">CartoDEM Depression</span>
-                        </div>
-                        <div class="accum-item">
-                            <span class="accum-lbl">Soil Moisture Saturation</span>
-                            <span class="accum-val">${hydroTerrain.soilMoistureSaturationPct}%</span>
-                            <span class="accum-sub">Zero soil infiltration</span>
-                        </div>
-                        <div class="accum-item">
-                            <span class="accum-lbl">Impervious Urban Surface</span>
-                            <span class="accum-val">${Math.round(hydroTerrain.imperviousSurfaceFraction * 100)}%</span>
-                            <span class="accum-sub">Paved roads & concrete</span>
-                        </div>
-                        <div class="accum-item">
-                            <span class="accum-lbl">CartoDEM Elevation</span>
-                            <span class="accum-val">${hydroTerrain.cartoDemElevationM} m</span>
-                            <span class="accum-sub">Mean terrain level</span>
-                        </div>
-                        <div class="accum-item">
-                            <span class="accum-lbl">Watershed Corridor</span>
-                            <span class="accum-val" style="font-size:0.95rem;">Urban Mithi</span>
-                            <span class="accum-sub">Outfall Sluice</span>
-                        </div>
-                    </div>
-
-                    <div style="margin-top:16px;">
-                        <div style="font-size:0.78rem; font-weight:700; color:var(--cyan-primary); margin-bottom:6px;">
-                            CRITICAL URBAN CHOKE POINTS:
-                        </div>
-                        ${hydroTerrain.inundationChokePoints.map(cp => `
-                            <div style="display:flex; justify-content:space-between; background:var(--surface-slate-2); padding:8px 12px; border-radius:4px; margin-bottom:6px; font-size:0.78rem;">
-                                <span>${cp.name}</span>
-                                <strong style="color:#ef4444;">${cp.depthEstM}m Depth (${cp.status})</strong>
-                            </div>
-                        `).join('')}
-                    </div>
+                <div class="empty-state-box">
+                    <strong>Live flood-risk modeling is not currently connected.</strong>
+                    <p>Available weather data can provide rainfall context, but this dashboard does not provide an official flood warning.</p>
+                    <p>Status: EXPERIMENTAL / DATA SOURCE REQUIRED</p>
                 </div>
             </div>
         `;
-
-        // Slider events
-        const slider = document.getElementById('flood-stress-slider');
-        if (slider) {
-            slider.addEventListener('input', (e) => {
-                this.stressRainRate = parseInt(e.target.value);
-                const disp = document.getElementById('slider-val-disp');
-                if (disp) disp.textContent = `${this.stressRainRate} mm/hr`;
-                const qVal = document.getElementById('peak-runoff-val');
-                if (qVal) qVal.textContent = `${(runoffC * (this.stressRainRate / 360) * 42.5).toFixed(1)} m³/s`;
-                const aVal = document.getElementById('flooded-area-val');
-                if (aVal) aVal.textContent = `${(this.stressRainRate * 0.58).toFixed(1)} km²`;
-            });
-        }
-
-        // Return period buttons
-        container.querySelectorAll('[data-return-period]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                container.querySelectorAll('[data-return-period]').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                this.stressReturnPeriod = parseInt(btn.getAttribute('data-return-period'));
-                this.showGlobalToast(`Simulating return period T = ${this.stressReturnPeriod} Years`, 'info');
-            });
-        });
-
-        // GeoJSON export button
-        const exportBtn = document.getElementById('btn-export-geojson');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', () => this.downloadGeoJsonFloodPolygon());
-        }
-    }
-
-    /**
-     * Download RFC 7946 GeoJSON Polygon for direct GIS import (QGIS, ArcGIS, Bhuvan)
-     */
-    downloadGeoJsonFloodPolygon() {
-        const { snapshot } = this.weatherData;
-        const lat = snapshot.location.lat;
-        const lon = snapshot.location.lon;
-
-        const geojson = {
-            type: "FeatureCollection",
-            properties: {
-                platform: "MeghDrishti AI",
-                analysis: "CartoDEM Hydrodynamic Inundation",
-                stressRainRateMmHr: this.stressRainRate,
-                returnPeriodYears: this.stressReturnPeriod,
-                generatedAt: new Date().toISOString()
-            },
-            features: [
-                {
-                    type: "Feature",
-                    properties: {
-                        hazardCategory: "Urban Inundation",
-                        floodDepthEstimatedM: 1.45,
-                        riskSeverity: "VERY HIGH"
-                    },
-                    geometry: {
-                        type: "Polygon",
-                        coordinates: [[
-                            [lon - 0.04, lat - 0.03],
-                            [lon + 0.05, lat - 0.02],
-                            [lon + 0.06, lat + 0.04],
-                            [lon - 0.03, lat + 0.05],
-                            [lon - 0.04, lat - 0.03]
-                        ]]
-                    }
-                }
-            ]
-        };
-
-        const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: 'application/geo+json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `MeghDrishti_Flood_Inundation_${snapshot.location.name}.geojson`;
-        a.click();
-        URL.revokeObjectURL(url);
-        this.showGlobalToast('RFC 7946 GeoJSON export ready for GIS analysis', 'success');
     }
 
     /**
      * Render TITAN/SCIT Meso-Convective Storm Cell Tracking View
      */
     renderStormTrackingView(data) {
-        const { stormCells } = data;
         const container = document.getElementById('storm-tracking-view-container');
         if (!container) return;
 
         container.innerHTML = `
-            <div class="section-card" style="margin-bottom:16px;">
+            <div class="section-card">
                 <div class="section-card-header">
-                    <div class="section-card-title">
-                        <span>⚡ Active Meso-Convective Storm Cells (TITAN/SCIT)</span>
-                    </div>
-                    <span class="mono badge-ai">3 EXAMPLE CELLS</span>
+                    <div class="section-card-title"><span>STORM TRACKING</span></div>
+                    <span class="mono">NO LIVE STORM DATA PROVIDER CONNECTED</span>
                 </div>
-                <div class="nwp-table-wrap">
-                    <table class="nwp-table">
-                        <thead>
-                            <tr>
-                                <th>Cell ID</th>
-                                <th>Centroid Coordinates</th>
-                                <th>Max dBZ</th>
-                                <th>Echo Top</th>
-                                <th>Velocity Vector</th>
-                                <th>VIL Density</th>
-                                <th>Hail Prob.</th>
-                                <th>Classification</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${stormCells.map(cell => `
-                                <tr>
-                                    <td class="mono" style="font-weight:700; color:var(--cyan-primary);">${cell.id}</td>
-                                    <td class="mono">${cell.centroid}</td>
-                                    <td class="mono" style="color:#ef4444; font-weight:700;">${cell.maxReflectivityDbz} dBZ</td>
-                                    <td class="mono">${cell.echoTopKm} km</td>
-                                    <td class="mono">${cell.azimuthDeg}° @ ${cell.speedKts} kts</td>
-                                    <td class="mono">${cell.vilKgM2} kg/m²</td>
-                                    <td class="mono" style="color:${cell.hailProbPct > 50 ? '#ef4444' : '#f59e0b'}; font-weight:700;">${cell.hailProbPct}%</td>
-                                    <td><span class="status-badge ${cell.severity.includes('SEVERE') ? 'status-suspect' : 'status-good'}">${cell.severity}</span></td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                <div class="empty-state-box">
+                    <strong>NO LIVE STORM DATA PROVIDER CONNECTED</strong>
+                    <p>No active storm-track dataset is currently available.</p>
+                    <p>Data status: UNAVAILABLE</p>
                 </div>
             </div>
         `;
@@ -1156,22 +775,7 @@ class MeghDrishtiApp {
         if (!container) return;
 
         const smartAlerts = buildSmartAlerts(data);
-        const alertCards = [
-            ...smartAlerts,
-            ...((alerts?.aiEarlyWarnings || []).map(item => ({
-                id: item.id,
-                severity: item.riskLevel || 'MODERATE',
-                title: item.headline,
-                location: data?.snapshot?.location?.name || 'Current location',
-                timeWindow: item.timeWindow || 'Current window',
-                reason: `${item.confidence || 'Confidence unavailable'} • ${item.majorContributingFactors?.[0] || 'Scenario generated locally.'}`,
-                source: item.engine || 'MeghDrishti AI',
-                timestamp: item.provenance?.timestamp || new Date().toISOString(),
-                icon: '🧠',
-                category: 'AI WEATHER INSIGHT',
-                expectedEffect: 'Conditions may change rapidly if the active rain cell intensifies.'
-            })))
-        ];
+        const alertCards = smartAlerts;
 
         const deduped = new Map();
         alertCards.forEach(alert => {
@@ -1188,7 +792,7 @@ class MeghDrishtiApp {
                         <div class="section-card-title" style="color:#ef4444;">
                             <span>🏛️ Official Warning Feed</span>
                         </div>
-                        <span class="mono badge-official">NO OFFICIAL WARNINGS AVAILABLE</span>
+                        <span class="mono badge-official">DATA SOURCE UNAVAILABLE</span>
                     </div>
                     ${alerts?.officialAlerts?.length ? alerts.officialAlerts.map(oa => `
                         <div style="background:var(--surface-slate-2); border-left:4px solid #ef4444; padding:14px; border-radius:6px; margin-top:12px;">
@@ -1212,7 +816,7 @@ class MeghDrishtiApp {
                         <span class="mono" style="color:var(--cyan-primary); font-size:0.75rem;">AI WEATHER INSIGHT</span>
                     </div>
                     <div class="smart-alert-list">
-                        ${uniqueAlerts.map(alert => `
+                        ${uniqueAlerts.length ? uniqueAlerts.map(alert => `
                             <div class="alert-card smart-alert-item" data-alert-id="${alert.id}">
                                 <div class="smart-alert-header">
                                     <span class="smart-alert-icon">${alert.icon}</span>
@@ -1226,14 +830,14 @@ class MeghDrishtiApp {
                                 <div class="smart-alert-meta">
                                     <span>${alert.category || 'AI WEATHER INSIGHT'}</span>
                                     <span>${alert.timeWindow}</span>
-                                    <span>${new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    <span>${alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Time unavailable'}</span>
                                     <span>${alert.source}</span>
                                 </div>
                                 <div class="alert-effects">
                                     <strong>Expected:</strong> ${alert.expectedEffect || 'Conditions may shift with local rainfall and wind changes.'}
                                 </div>
                             </div>
-                        `).join('')}
+                        `).join('') : '<p class="empty-alerts-box">No thresholded AI weather insight is available from the current Open-Meteo variables. Insights are advisory, not official warnings.</p>'}
                     </div>
                 </div>
             </div>
@@ -1345,14 +949,15 @@ class MeghDrishtiApp {
                     ${locations.map(loc => `
                         <div class="comparison-row">
                             <span>${loc.name}</span>
-                            <span>${loc.temperature}°C</span>
-                            <span>${loc.rain}%</span>
-                            <span>${loc.wind} km/h</span>
-                            <span>${loc.humidity}%</span>
-                            <span>${loc.uv}</span>
+                            <span>${loc.temperature == null ? '—' : `${loc.temperature}°C`}</span>
+                            <span>${loc.rain == null ? '—' : `${loc.rain}%`}</span>
+                            <span>${loc.wind == null ? '—' : `${loc.wind} km/h`}</span>
+                            <span>${loc.humidity == null ? '—' : `${loc.humidity}%`}</span>
+                            <span>${loc.uv == null ? '—' : loc.uv}</span>
                         </div>
                     `).join('')}
                 </div>
+                    <p class="small-muted">Other locations require their own live weather requests and are not shown as observations.</p>
             </div>
         `;
     }
@@ -1375,20 +980,16 @@ class MeghDrishtiApp {
                     <div class="section-card-title">
                         <span>🧠 MeghDrishti AI Intelligence Center</span>
                     </div>
-                    <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">LIVE DATA + AI SUMMARY</span>
+                    <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">${assessment.available ? 'OPEN-METEO · ADVISORY' : 'INSIGHTS UNAVAILABLE'}</span>
                 </div>
                 <div class="ai-overview-shell">
                     <div>
-                        <div class="ai-overview-kicker">CURRENT ASSESSMENT</div>
-                        <h3>${assessment.overallRiskLabel}</h3>
+                        <div class="ai-overview-kicker">AI WEATHER INSIGHT</div>
+                        <h3>${assessment.available ? 'Evidence-based weather analysis' : 'Weather analysis unavailable'}</h3>
                         <p>${assessment.summary}</p>
                     </div>
-                    <div class="ai-score-box">
-                        <span>Weather Activity</span>
-                        <strong>${assessment.overallRiskScore}/100</strong>
-                        <div class="ai-confidence-bar"><span style="width:${assessment.overallRiskScore}%"></span></div>
-                    </div>
                 </div>
+                <p class="small-muted">Advisory analysis only; this is not an official warning.</p>
             </div>
 
             <div class="dash-two-col" style="margin-bottom:18px;">
@@ -1397,7 +998,7 @@ class MeghDrishtiApp {
                         <div class="section-card-title">
                             <span>📝 WEATHER STORY</span>
                         </div>
-                        <span class="mono">${weatherStory.confidence}</span>
+                        <span class="mono">BASED ON AVAILABLE VARIABLES</span>
                     </div>
                     <div class="story-box">
                         <strong>${weatherStory.headline}</strong>
@@ -1417,12 +1018,12 @@ class MeghDrishtiApp {
                         <span class="mono">DATA-BACKED</span>
                     </div>
                     <div class="brief-box">
-                        ${weatherBrief.sections.map(section => `
+                        ${weatherBrief.sections.length ? weatherBrief.sections.map(section => `
                             <div class="brief-row">
                                 <span>${section.title}</span>
                                 <p>${section.text}</p>
                             </div>
-                        `).join('')}
+                        `).join('') : '<p class="empty-alerts-box">Live Open-Meteo forecast data is unavailable.</p>'}
                     </div>
                 </div>
             </div>
@@ -1436,7 +1037,7 @@ class MeghDrishtiApp {
                         <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">EXPLAINABLE AI</span>
                     </div>
                     <div class="ai-insight-grid">
-                        ${assessment.insights.map((insight) => `
+                        ${assessment.insights.length ? assessment.insights.map((insight) => `
                             <div class="ai-insight-card">
                                 <div class="ai-insight-head">
                                     <span>${insight.icon}</span>
@@ -1444,18 +1045,14 @@ class MeghDrishtiApp {
                                 </div>
                                 <p>${insight.detail}</p>
                                 <div class="ai-insight-why">
-                                    <span>WHY?</span>
+                                    <span>BASED ON</span>
                                     <ul>
-                                        ${insight.why.map(reason => `<li>${reason}</li>`).join('')}
+                                        ${insight.basis.map(reason => `<li>${reason}</li>`).join('')}
                                     </ul>
-                                </div>
-                                <div class="ai-insight-foot">
-                                    <span>Confidence</span>
-                                    <strong>${insight.confidence}%</strong>
                                 </div>
                                 <div class="ai-insight-period">${insight.period}</div>
                             </div>
-                        `).join('')}
+                        `).join('') : '<p class="empty-alerts-box">No data-backed insight is available from the current weather response.</p>'}
                     </div>
                 </div>
 
@@ -1467,7 +1064,7 @@ class MeghDrishtiApp {
                         <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">ACTIONABLE</span>
                     </div>
                     <ul class="ai-recommendation-list">
-                        ${assessment.recommendations.map(item => `<li>${item}</li>`).join('')}
+                        ${assessment.recommendations.length ? assessment.recommendations.map(item => `<li>${item}</li>`).join('') : '<li>No recommendation is available from the current weather variables.</li>'}
                     </ul>
                 </div>
             </div>
@@ -1478,12 +1075,11 @@ class MeghDrishtiApp {
                         <div class="section-card-title">
                             <span>📊 Model Consensus</span>
                         </div>
-                        <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">${data?.nwp?.models?.length > 1 ? 'CONSENSUS' : 'CONSENSUS UNAVAILABLE'}</span>
+                        <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">MODEL DATA UNAVAILABLE</span>
                     </div>
                     <div class="model-consensus-box">
-                        <strong>${data?.nwp?.models?.length > 1 ? '88%' : 'N/A'}</strong>
-                        <div class="model-consensus-bar"><span style="width:${data?.nwp?.models?.length > 1 ? 88 : 0}%"></span></div>
-                        <p>${data?.nwp?.models?.length > 1 ? 'Most forecast pathways continue to point to similar rainfall and moisture behavior for the next 12 to 24 hours.' : 'Only one model source is currently available, so consensus cannot be calculated.'}</p>
+                        <strong>N/A</strong>
+                        <p>Numerical weather prediction model comparison is not connected to a dedicated model-data source.</p>
                     </div>
                 </div>
 
@@ -1492,7 +1088,7 @@ class MeghDrishtiApp {
                         <div class="section-card-title">
                             <span>📍 Compare Locations</span>
                         </div>
-                        <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">DATA-BASED / SEARCHABLE</span>
+                        <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">CURRENT LOCATION ONLY</span>
                     </div>
                     <div class="comparison-table">
                         <div class="comparison-row comparison-header">
@@ -1505,13 +1101,14 @@ class MeghDrishtiApp {
                         ${comparison.map(loc => `
                             <div class="comparison-row">
                                 <span>${loc.name}</span>
-                                <span>${loc.temperature}°</span>
-                                <span>${loc.rain}%</span>
-                                <span>${loc.wind} km/h</span>
-                                <span>${loc.uv}</span>
+                                <span>${loc.temperature == null ? '—' : `${loc.temperature}°`}</span>
+                                <span>${loc.rain == null ? '—' : `${loc.rain}%`}</span>
+                                <span>${loc.wind == null ? '—' : `${loc.wind} km/h`}</span>
+                                <span>${loc.uv == null ? '—' : loc.uv}</span>
                             </div>
                         `).join('')}
                     </div>
+                    <p class="small-muted">Other locations require their own live weather requests and are not shown as observations.</p>
                 </div>
             </div>
         `;
@@ -1539,8 +1136,8 @@ class MeghDrishtiApp {
                 </div>
                 <div class="ops-kpi-card">
                     <span class="ops-kpi-lbl">Sensor QC Flags</span>
-                    <span class="ops-kpi-val" style="color:#10b981;">0 live sensors</span>
-                    <span class="ops-kpi-sub">Static demo values are not sensor QC</span>
+                    <span class="ops-kpi-val">Unavailable</span>
+                    <span class="ops-kpi-sub">No ground-sensor feed is connected</span>
                 </div>
                 <div class="ops-kpi-card">
                     <span class="ops-kpi-lbl">Operational Node</span>
@@ -1558,7 +1155,7 @@ class MeghDrishtiApp {
                 </div>
                 <div class="audit-stream-box">
                     <div>Weather and location search: Open-Meteo public API; no API key configured or required.</div>
-                    <div>Radar, satellite, AWS, NWP, inundation, and alert products: static demo examples.</div>
+                    <div>Radar, satellite, ground observations, NWP, flood modeling, and official alerts: unavailable; providers are not connected.</div>
                     <div>Firebase and Gemini are Android integrations; this web client does not call them.</div>
                     <div>No project-owned API backend is configured.</div>
                 </div>
@@ -1575,15 +1172,15 @@ class MeghDrishtiApp {
 
         const { alerts } = data;
         const allNotifs = [
-            ...alerts.officialAlerts.map(oa => ({
+            ...(alerts.officialAlerts || []).map(oa => ({
                 title: oa.headline,
-                time: new Date(oa.effective).toLocaleTimeString(),
+                time: oa.effective ? new Date(oa.effective).toLocaleTimeString() : 'Time unavailable',
                 desc: oa.description
             })),
-            ...alerts.aiEarlyWarnings.map(aw => ({
-                title: `Demo scenario: ${aw.headline}`,
-                time: new Date(aw.provenance.timestamp).toLocaleTimeString(),
-                desc: `Illustrative score: ${aw.riskScore} • Not an official warning`
+            ...buildSmartAlerts(data).map(insight => ({
+                title: `AI Weather Insight: ${insight.title}`,
+                time: insight.timestamp ? new Date(insight.timestamp).toLocaleTimeString() : 'Time unavailable',
+                desc: `${insight.reason} Advisory only; not an official warning.`
             }))
         ];
 
@@ -1622,19 +1219,27 @@ class MeghDrishtiApp {
         const textEl = document.getElementById('mode-text');
         const sidebarStatus = document.getElementById('sidebar-mode-status');
 
-        const isDemoWeather = mode === DataMode.DEMO || this.weatherData?.snapshot.isDemo === true;
-        if (!isDemoWeather) {
+        const snapshot = this.weatherData?.snapshot;
+        const isLiveWeather = mode === DataMode.LIVE && snapshot?.available && !snapshot.isDemo;
+        const isDemoWeather = mode === DataMode.DEMO || snapshot?.isDemo === true;
+        if (isLiveWeather) {
             if (btn) {
                 btn.className = 'mode-toggle-badge live';
                 if (textEl) textEl.textContent = 'OPEN-METEO WEATHER';
             }
             if (sidebarStatus) sidebarStatus.textContent = 'Weather: Open-Meteo';
-        } else {
+        } else if (isDemoWeather) {
             if (btn) {
                 btn.className = 'mode-toggle-badge demo';
-                if (textEl) textEl.textContent = mode === DataMode.DEMO ? 'DEMO WEATHER' : 'DEMO FALLBACK';
+                if (textEl) textEl.textContent = 'DEMO WEATHER';
             }
-            if (sidebarStatus) sidebarStatus.textContent = mode === DataMode.DEMO ? 'Weather: demo' : 'Weather: fallback demo';
+            if (sidebarStatus) sidebarStatus.textContent = 'Weather: demo';
+        } else {
+            if (btn) {
+                btn.className = 'mode-toggle-badge unavailable';
+                if (textEl) textEl.textContent = 'OPEN-METEO UNAVAILABLE';
+            }
+            if (sidebarStatus) sidebarStatus.textContent = 'Weather: unavailable';
         }
     }
 
@@ -1669,21 +1274,7 @@ class MeghDrishtiApp {
             this.mapLayerGroup.clearLayers();
 
             const marker = L.marker([lat, lon]).addTo(this.mapLayerGroup);
-            marker.bindPopup(`<b>${name}</b><br>Illustrative demo location`).openPopup();
-
-            // Flood polygon
-            const floodPoly = L.polygon([
-                [lat - 0.04, lon - 0.03],
-                [lat + 0.05, lon - 0.02],
-                [lat + 0.06, lon + 0.04],
-                [lat - 0.03, lon + 0.05]
-            ], {
-                color: '#ef4444',
-                fillColor: '#ef4444',
-                fillOpacity: 0.35
-            }).addTo(this.mapLayerGroup);
-
-            floodPoly.bindPopup(`<b>CartoDEM Flood Extent</b><br>Precipitation Stress: ${this.stressRainRate} mm/hr<br>Risk: VERY HIGH`);
+            marker.bindPopup(`<b>${name}</b><br>Selected location; weather overlays unavailable.`).openPopup();
         }
     }
 
@@ -1781,7 +1372,7 @@ class MeghDrishtiApp {
 
         const refreshBtn = document.getElementById('btn-refresh-now');
         if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => this.loadWeatherForCurrentLocation());
+            refreshBtn.addEventListener('click', () => this.loadWeatherForCurrentLocation(true));
         }
 
         const saveLocBtn = document.getElementById('btn-save-current-loc');
@@ -1949,46 +1540,47 @@ class MeghDrishtiApp {
         const container = document.getElementById('weather-deep-dive-grid');
         if (!container) return;
 
-        const { snapshot, groundObservations } = data;
+        const { snapshot } = data;
+        const prefs = StorageService.getPreferences();
 
         container.innerHTML = `
             <div class="section-card">
                 <div class="section-card-header">
                     <div class="section-card-title">
-                        <span>🧪 Thermodynamic Atmospheric Sounding</span>
+                        <span>LIVE WEATHER VARIABLES</span>
                     </div>
-                    <span class="mono badge-ai">DEMO EXAMPLES</span>
+                    <span class="mono">${snapshot.available && !snapshot.isDemo ? 'OPEN-METEO' : 'UNAVAILABLE'}</span>
                 </div>
                 <div class="rainfall-accum-grid">
                     <div class="accum-item">
-                        <span class="accum-lbl">Convective Available Potential Energy (CAPE)</span>
-                        <span class="accum-val" style="color:#ef4444;">2610 J/kg</span>
-                        <span class="accum-sub">Extreme Instability</span>
+                        <span class="accum-lbl">Temperature</span>
+                        <span class="accum-val">${weatherService.formatTemp(snapshot.temperature, prefs.temperature)}</span>
+                        <span class="accum-sub">Open-Meteo current field</span>
                     </div>
                     <div class="accum-item">
-                        <span class="accum-lbl">Convective Inhibition (CIN)</span>
-                        <span class="accum-val">-21 J/kg</span>
-                        <span class="accum-sub">Weak capping lid</span>
+                        <span class="accum-lbl">Apparent temperature</span>
+                        <span class="accum-val">${weatherService.formatTemp(snapshot.feelsLike, prefs.temperature)}</span>
+                        <span class="accum-sub">Open-Meteo current field</span>
                     </div>
                     <div class="accum-item">
-                        <span class="accum-lbl">Precipitable Water (PWAT)</span>
-                        <span class="accum-val">59.8 mm</span>
-                        <span class="accum-sub">High Moisture Column</span>
+                        <span class="accum-lbl">Relative humidity</span>
+                        <span class="accum-val">${snapshot.humidity == null ? '—' : `${snapshot.humidity}%`}</span>
+                        <span class="accum-sub">Open-Meteo current field</span>
                     </div>
                     <div class="accum-item">
-                        <span class="accum-lbl">Lifting Condensation Level (LCL)</span>
-                        <span class="accum-val">680 m</span>
-                        <span class="accum-sub">Low cloud base</span>
+                        <span class="accum-lbl">Pressure</span>
+                        <span class="accum-val">${weatherService.formatPressure(snapshot.pressure, prefs.pressure)}</span>
+                        <span class="accum-sub">Open-Meteo current field</span>
                     </div>
                     <div class="accum-item">
-                        <span class="accum-lbl">Freezing Level (0°C Isotherm)</span>
-                        <span class="accum-val">4.8 km</span>
-                        <span class="accum-sub">High freezing altitude</span>
+                        <span class="accum-lbl">Wind speed</span>
+                        <span class="accum-val">${weatherService.formatWind(snapshot.windSpeed, prefs.windSpeed)}</span>
+                        <span class="accum-sub">Open-Meteo current field</span>
                     </div>
                     <div class="accum-item">
-                        <span class="accum-lbl">Dew Point Depression</span>
-                        <span class="accum-val">2.2°C</span>
-                        <span class="accum-sub">Near saturated air</span>
+                        <span class="accum-lbl">Cloud cover</span>
+                        <span class="accum-val">${snapshot.cloudCover == null ? '—' : `${snapshot.cloudCover}%`}</span>
+                        <span class="accum-sub">Open-Meteo current field</span>
                     </div>
                 </div>
             </div>
@@ -1996,27 +1588,13 @@ class MeghDrishtiApp {
             <div class="section-card">
                 <div class="section-card-header">
                     <div class="section-card-title">
-                        <span>📡 Ground-Station Demo Examples</span>
+                        <span>ADDITIONAL DATASETS</span>
                     </div>
-                    <span class="mono badge-ai">NOT LIVE SENSOR DATA</span>
+                    <span class="mono">UNAVAILABLE</span>
                 </div>
-                <div style="margin-top:14px; display:flex; flex-direction:column; gap:10px;">
-                    <div style="display:flex; justify-content:space-between; background:var(--surface-slate-2); padding:10px 14px; border-radius:6px;">
-                        <span>Surface Temperature Sensor</span>
-                        <strong class="mono" style="color:#10b981;">${groundObservations.surfaceTempC}°C (DEMO)</strong>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; background:var(--surface-slate-2); padding:10px 14px; border-radius:6px;">
-                        <span>Tipping Bucket Rain Gauge</span>
-                        <strong class="mono" style="color:#10b981;">SAMPLE VALUE</strong>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; background:var(--surface-slate-2); padding:10px 14px; border-radius:6px;">
-                        <span>Barometric Pressure Sensor</span>
-                        <strong class="mono" style="color:#10b981;">${groundObservations.barometricPressureHpa} hPa (DEMO)</strong>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; background:var(--surface-slate-2); padding:10px 14px; border-radius:6px;">
-                        <span>Ultrasonic Anemometer</span>
-                        <strong class="mono" style="color:#10b981;">${groundObservations.windSpeedKmh} km/h (DEMO)</strong>
-                    </div>
+                <div class="empty-state-box">
+                    <strong>ADDITIONAL ATMOSPHERIC SOUNDING AND GROUND-SENSOR DATA UNAVAILABLE</strong>
+                    <p>No connected provider supplies CAPE, CIN, station observations, or sensor quality flags.</p>
                 </div>
             </div>
         `;
@@ -2049,18 +1627,18 @@ class MeghDrishtiApp {
                             </tr>
                         </thead>
                         <tbody>
-                            ${daily.map((d, i) => `
+                            ${daily.length ? daily.map((d, i) => `
                                 <tr>
                                     <td><strong>${new Date(d.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong></td>
                                     <td><span style="margin-right:6px;">${d.icon}</span> ${d.condition}</td>
                                     <td class="mono" style="font-weight:700;">${weatherService.formatTemp(d.maxTemp, prefs.temperature)}</td>
                                     <td class="mono">${weatherService.formatTemp(d.minTemp, prefs.temperature)}</td>
-                                    <td class="mono" style="color:#10b981;">${d.rainProbability}%</td>
+                                    <td class="mono" style="color:#10b981;">${d.rainProbability == null ? '—' : `${d.rainProbability}%`}</td>
                                     <td class="mono" style="color:#38bdf8;">${weatherService.formatPrecip(d.precipitationSum, prefs.precipitation)}</td>
                                     <td class="mono">${weatherService.formatWind(d.windMax, prefs.windSpeed)}</td>
-                                    <td class="mono">${d.uvMax.toFixed(0)}</td>
+                                    <td class="mono">${d.uvMax == null ? '—' : d.uvMax.toFixed(0)}</td>
                                 </tr>
-                            `).join('')}
+                            `).join('') : '<tr><td colspan="8">Open-Meteo daily forecast data is unavailable.</td></tr>'}
                         </tbody>
                     </table>
                 </div>
@@ -2192,7 +1770,25 @@ class MeghDrishtiApp {
 
     updateRelativeTime() {
         const el = document.getElementById('refresh-time-text');
-        if (el) el.textContent = 'Updated just now';
+        if (el && this.lastFetchTime) {
+            const elapsedMinutes = Math.floor((Date.now() - this.lastFetchTime.getTime()) / 60000);
+            el.textContent = elapsedMinutes < 1 ? 'Retrieved just now' : `Retrieved ${elapsedMinutes} min ago`;
+            el.title = `Open-Meteo data retrieved ${this.lastFetchTime.toLocaleString()}`;
+        } else if (el) {
+            el.textContent = 'Unavailable';
+            el.removeAttribute('title');
+        }
+
+        const status = document.querySelector('.data-status');
+        if (!status) return;
+        const label = status.querySelector('.status-copy strong');
+        const detail = status.querySelector('.status-copy span');
+        const snapshot = this.weatherData?.snapshot;
+        const isDemo = snapshot?.isDemo === true;
+        const isLive = snapshot?.available === true && !isDemo;
+        status.className = `data-status ${isLive ? 'status-live' : isDemo ? 'status-demo' : 'status-unavailable'}`;
+        if (label) label.textContent = isLive ? 'LIVE' : isDemo ? 'DEMO' : 'UNAVAILABLE';
+        if (detail) detail.textContent = isLive ? `Open-Meteo · ${el?.textContent || 'Updated'}` : isDemo ? 'Simulated weather' : 'Open-Meteo request failed';
     }
 
     showGlobalToast(msg, type = 'info') {

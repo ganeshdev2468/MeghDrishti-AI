@@ -49,11 +49,11 @@
                 <div class="hero-features">
                     <div class="hero-feat-item">
                         <span class="feat-dot"></span>
-                        <span>Doppler Radar PPI Reflectivity & Meso-Convective Storm Tracking</span>
+                        <span>Live Open-Meteo forecasts for Andhra Pradesh</span>
                     </div>
                     <div class="hero-feat-item">
                         <span class="feat-dot"></span>
-                        <span>INSAT-3DS Multi-Spectral Telemetry (TIR1, WV, VIS, Hydro-QPE)</span>
+                        <span>Clearly labelled radar, satellite, and model data availability</span>
                     </div>
                     <div class="hero-feat-item">
                         <span class="feat-dot"></span>
@@ -63,7 +63,7 @@
             </div>
 
             <div class="hero-telemetry-badge">
-                <div class="mono">SYSTEM: LOCAL DEMO • NO AGENCY BACKEND</div>
+                <div class="mono">DEMO ENVIRONMENT · LOCAL BROWSER SESSION</div>
                 <div class="mono" id="auth-live-time">00:00:00 UTC</div>
             </div>
         </div>
@@ -74,8 +74,8 @@
             <!-- 1. LOGIN CARD -->
             <div id="auth-view-login" class="auth-form-card" style="display:none;">
                 <div class="auth-card-header">
-                    <h3 class="auth-card-title">Local Demo Sign In</h3>
-                    <p class="auth-card-subtitle">Demo profile only. This app has no production authentication service.</p>
+                    <h3 class="auth-card-title">Weather Intelligence Platform</h3>
+                    <p class="auth-card-subtitle">Demo Environment · Local browser session. No production account service is connected.</p>
                 </div>
 
                 <p class="auth-demo-note">Do not enter real passwords or agency credentials. Sign-up data is stored in this browser only.</p>
@@ -84,27 +84,27 @@
 
                 <form id="form-login" class="auth-form">
                     <div class="form-group">
-                        <label class="form-label" for="login-email">Demo profile email</label>
+                        <label class="form-label" for="login-email">Local profile email</label>
                         <input type="email" id="login-email" class="form-input" placeholder="demo@example.invalid" required>
                     </div>
 
                     <div class="form-group">
                         <div class="form-label">
-                            <label for="login-password">Demo password</label>
+                            <label for="login-password">Local profile password</label>
                             <a href="#/forgot-password" class="auth-nav-link" style="color:var(--cyan-primary); text-decoration:none;">Forgot password?</a>
                         </div>
                         <div class="form-input-wrap">
                             <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
-                            <button type="button" class="btn-toggle-pwd" data-target="login-password">👁️</button>
+                            <button type="button" class="btn-toggle-pwd" data-target="login-password" aria-label="Show password">👁️</button>
                         </div>
                     </div>
 
                     <button type="submit" id="btn-login-submit" class="btn-primary">
-                        <span>Sign In to Local Demo</span>
+                        <span>Sign in</span>
                     </button>
 
                     <button type="button" id="btn-quick-demo-login" class="btn-demo-quick">
-                        ⚡ Quick Local Demo Access
+                        Continue to local demo
                     </button>
 
                     <div class="auth-divider">
@@ -118,7 +118,7 @@
                             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                         </svg>
-                        <span>Continue as Demo Operator (local only)</span>
+                        <span>Continue as local demo operator</span>
                     </button>
 
                     <p class="auth-switch-text">
@@ -156,7 +156,7 @@
                         <label class="form-label" for="signup-password">Password</label>
                         <div class="form-input-wrap">
                             <input type="password" id="signup-password" class="form-input" placeholder="At least 8 characters" required>
-                            <button type="button" class="btn-toggle-pwd" data-target="signup-password">👁️</button>
+                            <button type="button" class="btn-toggle-pwd" data-target="signup-password" aria-label="Show password">👁️</button>
                         </div>
                     </div>
 
@@ -347,11 +347,11 @@
 
                 <!-- Topbar Actions & Status -->
                 <div class="topbar-right">
-                    <div class="data-status status-live" aria-live="polite">
+                    <div class="data-status status-unavailable" aria-live="polite">
                         <span class="status-dot"></span>
                         <div class="status-copy">
-                            <strong>LIVE</strong>
-                            <span>Updated 2 min ago</span>
+                            <strong>CONNECTING</strong>
+                            <span>Open-Meteo request pending</span>
                         </div>
                     </div>
 
@@ -376,14 +376,14 @@
 
                     <!-- Notifications Bell & Drawer Trigger -->
                     <div class="notif-wrapper">
-                        <button id="btn-toggle-notifs" class="btn-icon-top" title="Local demo notifications">
+                        <button id="btn-toggle-notifs" class="btn-icon-top" title="Weather notices" aria-label="Open weather notices">
                             <span>🔔</span>
-                            <span id="notif-count-badge" class="notif-badge">3</span>
+                            <span id="notif-count-badge" class="notif-badge">0</span>
                         </button>
                         <div id="notifs-dropdown" class="notifs-dropdown">
                             <div class="notifs-header">
-                                <span>Demo Notices</span>
-                                <span class="mono" style="font-size:0.7rem; color:var(--cyan-primary);">LOCAL ONLY</span>
+                                <span>Weather Notices</span>
+                                <span class="mono" style="font-size:0.7rem; color:var(--cyan-primary);">ADVISORY</span>
                             </div>
                             <div id="notifs-list" class="notifs-list">
                                 <!-- Populated dynamically -->
@@ -398,7 +398,7 @@
                             <path d="M1 20v-6h6"/>
                             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
                         </svg>
-                        <span id="refresh-time-text">Updated now</span>
+                        <span id="refresh-time-text">Awaiting data</span>
                     </button>
 
                     <!-- Unit Switcher -->
@@ -415,7 +415,7 @@
             </header>
 
             <div class="data-provenance-banner" role="note">
-                <strong>DATA SOURCES:</strong> Live weather forecasts are provided by Open-Meteo. Radar, satellite, model, flood-risk, and alert panels are illustrative scenarios and are not official warnings.
+                <strong>DATA SOURCES:</strong> Weather forecasts are retrieved from Open-Meteo. Radar, satellite, NWP comparison, flood-risk modeling, historical baselines, and official warning feeds are not connected. AI weather insights are advisory, not official warnings.
             </div>
 
             <!-- ── ROUTED VIEW CONTAINERS ── -->
@@ -486,12 +486,12 @@
                             <div class="metric-card">
                                 <span class="m-label">Relative Humidity</span>
                                 <span id="metric-humidity" class="m-value">--%</span>
-                                <span class="m-sub">Dew Point: <span id="metric-dewpoint">--°</span></span>
+                                <span class="m-sub">Calculated dew point: <span id="metric-dewpoint">--°</span></span>
                             </div>
                             <div class="metric-card">
-                                <span class="m-label">Barometric Pressure</span>
+                                <span class="m-label">Surface Pressure</span>
                                 <span id="metric-pressure" class="m-value">-- hPa</span>
-                                <span class="m-sub" id="metric-pressure-tendency">Mean Sea Level</span>
+                                <span class="m-sub" id="metric-pressure-tendency">Open-Meteo current field</span>
                             </div>
                             <div class="metric-card">
                                 <span class="m-label">Surface Wind</span>
@@ -504,9 +504,9 @@
                                 <span class="m-sub">Peak velocity</span>
                             </div>
                             <div class="metric-card">
-                                <span class="m-label">Precipitation Rate</span>
-                                <span id="metric-precip" class="m-value">-- mm/hr</span>
-                                <span class="m-sub">Current intensity</span>
+                                <span class="m-label">Precipitation</span>
+                                    <span id="metric-precip" class="m-value">-- mm</span>
+                                    <span class="m-sub">Current Open-Meteo interval</span>
                             </div>
                             <div class="metric-card">
                                 <span class="m-label">Horizontal Visibility</span>
@@ -528,56 +528,48 @@
                 </div>
 
                 <!-- Operational Dual Section: Heavy Rainfall Monitor & Hydrodynamic Inundation Risk -->
-                <div class="dash-two-col">
+                <div class="dash-two-col" id="dashboard-precip-risk">
                     <!-- Left: Heavy Rainfall Monitor -->
                     <div class="section-card">
                         <div class="section-card-header">
                             <div class="section-card-title">
-                                <span>🌧️ Heavy Rainfall Monitor</span>
+                                <span>🌧️ Open-Meteo Precipitation</span>
                             </div>
-                            <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">Multi-Accumulation Telemetry</span>
+                            <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">LIVE FORECAST CONTEXT</span>
                         </div>
                         <div class="rainfall-accum-grid">
                             <div class="accum-item">
-                                <span class="accum-lbl">Current Rate</span>
-                                <span class="accum-val" id="rf-current-rate">-- mm/hr</span>
-                                <span class="accum-sub" id="rf-intensity-tag">Moderate</span>
+                                <span class="accum-lbl">Current precipitation</span>
+                                <span class="accum-val" id="rf-current-rate">-- mm</span>
+                                <span class="accum-sub" id="rf-intensity-tag">Open-Meteo current interval</span>
                             </div>
                             <div class="accum-item">
-                                <span class="accum-lbl">1-Hour Acc.</span>
-                                <span class="accum-val" id="rf-1h-acc">-- mm</span>
-                                <span class="accum-sub">Last 60 mins</span>
+                                <span class="accum-lbl">1-Hour Accumulation</span>
+                                <span class="accum-val" id="rf-1h-acc">Unavailable</span>
+                                <span class="accum-sub">Gauge history not connected</span>
                             </div>
                             <div class="accum-item">
-                                <span class="accum-lbl">3-Hour Acc.</span>
-                                <span class="accum-val" id="rf-3h-acc">-- mm</span>
-                                <span class="accum-sub">Convective total</span>
+                                <span class="accum-lbl">3-Hour Accumulation</span>
+                                <span class="accum-val" id="rf-3h-acc">Unavailable</span>
+                                <span class="accum-sub">Gauge history not connected</span>
                             </div>
                             <div class="accum-item">
-                                <span class="accum-lbl">6-Hour Acc.</span>
-                                <span class="accum-val" id="rf-6h-acc">-- mm</span>
-                                <span class="accum-sub">Synoptic period</span>
+                                <span class="accum-lbl">6-Hour Accumulation</span>
+                                <span class="accum-val" id="rf-6h-acc">Unavailable</span>
+                                <span class="accum-sub">Gauge history not connected</span>
                             </div>
                             <div class="accum-item">
-                                <span class="accum-lbl">24-Hour Acc.</span>
-                                <span class="accum-val" id="rf-24h-acc">-- mm</span>
-                                <span class="accum-sub">Daily accumulation</span>
+                                <span class="accum-lbl">24-Hour Accumulation</span>
+                                <span class="accum-val" id="rf-24h-acc">Unavailable</span>
+                                <span class="accum-sub">Gauge history not connected</span>
                             </div>
                             <div class="accum-item">
                                 <span class="accum-lbl">Rainfall Anomaly</span>
-                                <span class="accum-val" id="rf-anomaly" style="color:var(--color-watch);">+185%</span>
-                                <span class="accum-sub">Above Normal (LPA)</span>
+                                <span class="accum-val" id="rf-anomaly">BASELINE UNAVAILABLE</span>
+                                <span class="accum-sub">Historical climatology not connected</span>
                             </div>
                         </div>
-                        <div class="trend-bar-box">
-                            <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:6px; display:flex; justify-content:space-between;">
-                                <span>Rainfall Intensity Trend: <strong id="rf-trend-desc" style="color:var(--cyan-primary);">Intensifying Convective Cluster</strong></span>
-                                <span class="mono" id="rf-provenance-badge">SIMULATED DEMO</span>
-                            </div>
-                            <div class="trend-track">
-                                <div class="trend-fill" id="rf-trend-bar" style="width: 78%;"></div>
-                            </div>
-                        </div>
+                        <p class="small-muted">Historical gauge accumulations and rainfall anomaly calculations are unavailable.</p>
                     </div>
 
                     <!-- Right: Flood / Inundation Risk Assessment -->
@@ -586,39 +578,36 @@
                             <div class="section-card-title">
                                 <span>🌊 Urban Flood & Inundation Risk</span>
                             </div>
-                            <span class="mono" style="font-size:0.75rem; color:var(--color-warning);">Hydrodynamic Risk Assessment</span>
+                                <span class="mono" style="font-size:0.75rem; color:var(--color-warning);">EXPERIMENTAL · MODEL UNAVAILABLE</span>
                         </div>
                         <div class="inundation-summary-card">
                             <div class="inundation-score-row">
                                 <div>
-                                    <span class="inundation-score-num" id="flood-risk-score">88</span>
-                                    <span class="inundation-score-max">/100</span>
+                                    <span class="inundation-score-num" id="flood-risk-score">—</span>
                                 </div>
                                 <div class="risk-level-badge level-very-high" id="flood-risk-level">
-                                    VERY HIGH RISK
+                                    MODEL UNAVAILABLE
                                 </div>
                             </div>
                             <div class="inundation-metrics-row">
                                 <div class="inund-metric">
-                                    <span class="im-label">Affected Area Est.</span>
-                                    <span class="im-val" id="flood-affected-area">42.5 km²</span>
+                                    <span class="im-label">Affected Area</span>
+                                    <span class="im-val" id="flood-affected-area">Unavailable</span>
                                 </div>
                                 <div class="inund-metric">
-                                    <span class="im-label">Critical Time Window</span>
-                                    <span class="im-val" id="flood-time-window">18:30 – 21:30 IST</span>
+                                    <span class="im-label">Timing Estimate</span>
+                                    <span class="im-val" id="flood-time-window">Unavailable</span>
                                 </div>
                                 <div class="inund-metric">
                                     <span class="im-label">Model Confidence</span>
-                                    <span class="im-val" id="flood-confidence">84% (±6 mm)</span>
+                                    <span class="im-val" id="flood-confidence">Unavailable</span>
                                 </div>
                             </div>
                             <div class="xai-contributions">
                                 <div class="xai-title">Contributing Factors (Explainable AI):</div>
                                 <ul class="xai-list" id="flood-xai-factors">
-                                    <li>Sustained precipitation intensity > 35 mm/hr</li>
-                                    <li>Antecedent 24h soil saturation > 90%</li>
-                                    <li>Low-lying coastal terrain (CartoDEM < 12m)</li>
-                                    <li>Urban impervious concrete fraction (78%)</li>
+                                    <li>Live flood-risk modeling is not currently connected.</li>
+                                    <li>Open-Meteo weather can provide context, not an official flood warning.</li>
                                 </ul>
                             </div>
                         </div>
@@ -626,12 +615,12 @@
                 </div>
 
                 <!-- Short-Term Rainfall Nowcast (Next 15, 30, 60, 120, 180 min) -->
-                <div class="section-card">
+                <div class="section-card" id="dashboard-nowcast">
                     <div class="section-card-header">
                         <div class="section-card-title">
                             <span>⏱️ Short-Term Rainfall Nowcast</span>
                         </div>
-                        <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">Illustrative demo multipliers</span>
+                        <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">UNAVAILABLE · NO RADAR NOWCAST</span>
                     </div>
                     <div class="nowcast-grid" id="nowcast-step-container">
                         <!-- Populated via JS -->
@@ -639,7 +628,7 @@
                 </div>
 
                 <!-- Two-Column Active Warnings: OFFICIAL WARNING vs MEGHDRISHTI AI RISK ASSESSMENT -->
-                <div class="dash-two-col">
+                <div class="dash-two-col" id="dashboard-alert-panels">
                     <!-- Left: Official Alerts (IMD/NDMA) -->
                     <div class="official-warnings-card">
                         <div class="section-card-header">
@@ -657,9 +646,9 @@
                     <div class="ai-warnings-card">
                         <div class="section-card-header">
                             <div class="section-card-title" style="color:#38bdf8;">
-                                <span>🤖 Illustrative Risk Scenarios</span>
+                                <span>🤖 AI Weather Insights</span>
                             </div>
-                            <span class="mono badge-ai">STATIC DEMO DATA</span>
+                            <span class="mono badge-ai">ADVISORY · NOT OFFICIAL</span>
                         </div>
                         <div id="ai-alerts-container">
                             <!-- Populated via JS -->
@@ -668,7 +657,7 @@
                 </div>
 
                 <!-- Hourly Forecast Carousel (Next 24 Hours) -->
-                <div class="section-card">
+                <div class="section-card" id="dashboard-hourly">
                     <div class="section-card-header">
                         <div class="section-card-title">
                             <span>🕒 24-Hour Synoptic Progression</span>
@@ -681,7 +670,7 @@
                 </div>
 
                 <!-- 7-Day Forecast & Risk Matrix -->
-                <div class="dash-two-col">
+                <div class="dash-two-col" id="dashboard-daily">
                     <div class="section-card">
                         <div class="section-card-header">
                             <div class="section-card-title">
@@ -691,16 +680,6 @@
                         </div>
                         <div id="daily-forecast-container" class="daily-list"></div>
                     </div>
-
-                    <div class="section-card">
-                        <div class="section-card-header">
-                            <div class="section-card-title">
-                                <span>🛡️ Atmospheric Risk Matrix</span>
-                            </div>
-                                <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">Illustrative thresholds</span>
-                        </div>
-                        <div id="risk-matrix-container" class="risk-grid"></div>
-                    </div>
                 </div>
             </main>
 
@@ -708,10 +687,10 @@
             <main id="view-weather" class="view-container">
                 <div class="dashboard-header">
                     <div>
-                        <div class="loc-sub-tag">FORECAST DATA & DEMO EXAMPLES</div>
-                        <h2 class="dash-location-title">Weather API Data</h2>
+                        <div class="loc-sub-tag">OPEN-METEO WEATHER</div>
+                        <h2 class="dash-location-title">Current Weather Details</h2>
                         <div class="dash-meta-row">
-                            <span>Open-Meteo forecast values plus illustrative thermodynamic and ground-station examples</span>
+                            <span>Current weather fields are sourced from Open-Meteo; additional atmospheric sounding and ground-sensor datasets are unavailable.</span>
                         </div>
                     </div>
                 </div>
@@ -723,9 +702,9 @@
                 <div class="dashboard-header">
                     <div>
                         <div class="loc-sub-tag">PRECIPITATION TELEMETRY</div>
-                        <h2 class="dash-location-title">Heavy Rainfall Monitoring & Anomaly Center</h2>
+                        <h2 class="dash-location-title">Precipitation & Rainfall Context</h2>
                         <div class="dash-meta-row">
-                            <span>Ground station rain gauges, radar QPE, satellite Hydro-Estimator, and multi-hour accumulation statistics</span>
+                            <span>Open-Meteo current and forecast precipitation; gauge accumulations and climatological baselines are unavailable.</span>
                         </div>
                     </div>
                 </div>
@@ -736,10 +715,10 @@
             <main id="view-radar" class="view-container">
                 <div class="dashboard-header">
                     <div>
-                        <div class="loc-sub-tag">REMOTE SENSING TELEMETRY</div>
+                        <div class="loc-sub-tag">RADAR DATA STATUS</div>
                         <h2 class="dash-location-title">Weather Radar</h2>
                         <div class="dash-meta-row">
-                            <span>Illustrative radar visualization · no live radar feed connected</span>
+                            <span>Live radar imagery provider is not connected.</span>
                         </div>
                     </div>
                 </div>
@@ -750,11 +729,9 @@
             <main id="view-satellite" class="view-container">
                 <div class="dashboard-header">
                     <div>
-                        <div class="loc-sub-tag">SATELLITE DEMO SCENARIO</div>
+                        <div class="loc-sub-tag">SATELLITE DATA STATUS</div>
                         <h2 class="dash-location-title">Satellite Intelligence</h2>
-                        <div class="dash-meta-row">
-                            <span>Thermal Infrared (TIR1), Water Vapour (WV), Visible (VIS), Hydro-Estimator QPE, and Cloud Motion Vectors (CMV)</span>
-                        </div>
+                        <div class="dash-meta-row"><span>Satellite imagery provider is not connected.</span></div>
                     </div>
                 </div>
                 <div id="satellite-view-container"></div>
@@ -765,9 +742,9 @@
                 <div class="dashboard-header">
                     <div>
                         <div class="loc-sub-tag">NUMERICAL WEATHER PREDICTION</div>
-                        <h2 class="dash-location-title">NWP Multi-Model Comparison & Convective Potential</h2>
+                        <h2 class="dash-location-title">Numerical Weather Prediction Models</h2>
                         <div class="dash-meta-row">
-                            <span>Illustrative model names and values; no NWP provider is connected</span>
+                            <span>Model comparison requires a dedicated model-data source, which is not connected.</span>
                         </div>
                     </div>
                 </div>
@@ -778,10 +755,10 @@
             <main id="view-flood-risk" class="view-container">
                 <div class="dashboard-header">
                     <div>
-                        <div class="loc-sub-tag">HYDRODYNAMIC MODELING</div>
-                        <h2 class="dash-location-title">Illustrative Flood-Risk Scenarios</h2>
+                        <div class="loc-sub-tag">FLOOD-RISK DATA STATUS</div>
+                        <h2 class="dash-location-title">Flood Risk</h2>
                         <div class="dash-meta-row">
-                            <span>Interactive precipitation stress-test, return period simulation (T=2 to 100 yr), and RFC 7946 GeoJSON GIS export</span>
+                            <span>Live flood-risk modeling is not connected; weather context is not an official warning.</span>
                         </div>
                     </div>
                 </div>
@@ -792,10 +769,10 @@
             <main id="view-storm-tracking" class="view-container">
                 <div class="dashboard-header">
                     <div>
-                        <div class="loc-sub-tag">MESO-CONVECTIVE TRACKING</div>
-                        <h2 class="dash-location-title">TITAN/SCIT Meso-Convective Storm Cell Monitor</h2>
+                        <div class="loc-sub-tag">STORM DATA STATUS</div>
+                        <h2 class="dash-location-title">Storm Tracking</h2>
                         <div class="dash-meta-row">
-                            <span>Static example storm cells; no live radar tracking feed is connected</span>
+                            <span>No live storm-track dataset is connected.</span>
                         </div>
                     </div>
                 </div>
@@ -809,7 +786,7 @@
                         <div class="loc-sub-tag">CIVIL PROTECTION & DISASTER RESPONSE</div>
                         <h2 class="dash-location-title">Weather Alerts</h2>
                         <div class="dash-meta-row">
-                            <span>Local demo scenarios only; no public or agency alert broadcast is implemented</span>
+                            <span>Official warning data is unavailable. AI weather insights are advisory only.</span>
                         </div>
                     </div>
                 </div>
@@ -827,9 +804,9 @@
                             <button class="map-layer-btn active" data-layer="standard">Terrain Base</button>
                             <button class="map-layer-btn" data-layer="temp" disabled title="No temperature map feed is configured">Temperature</button>
                             <button class="map-layer-btn" data-layer="precip" disabled title="No precipitation map feed is configured">Precipitation</button>
-                            <button class="map-layer-btn" data-layer="radar" disabled title="No radar map feed is configured">Radar demo</button>
-                            <button class="map-layer-btn" data-layer="satellite" disabled title="No satellite map feed is configured">Satellite demo</button>
-                            <button class="map-layer-btn" data-layer="inundation" disabled title="Illustrative only; no inundation map feed is configured">Flood demo</button>
+                            <button class="map-layer-btn" data-layer="radar" disabled title="No radar map feed is configured">Radar unavailable</button>
+                            <button class="map-layer-btn" data-layer="satellite" disabled title="No satellite map feed is configured">Satellite unavailable</button>
+                            <button class="map-layer-btn" data-layer="inundation" disabled title="No flood-risk map feed is configured">Flood risk unavailable</button>
                         </div>
                     </div>
                     <p class="map-layer-status">Only the basemap is connected. No weather overlays are available.</p>
@@ -855,10 +832,10 @@
             <main id="view-history" class="view-container">
                 <div class="dashboard-header">
                     <div>
-                        <div class="loc-sub-tag">CLIMATOLOGY & RETROSPECTIVE ANALYSIS</div>
-                        <h2 class="dash-location-title">Historical Extreme Precipitation Events</h2>
+                        <div class="loc-sub-tag">HISTORICAL DATA STATUS</div>
+                        <h2 class="dash-location-title">Historical Weather</h2>
                         <div class="dash-meta-row">
-                            <span>Archived high-impact flood events (Mumbai 2005 944mm, Chennai 2015, Kedarnath 2013, Mahabaleshwar 2021)</span>
+                            <span>Historical comparison requires a connected historical weather dataset.</span>
                         </div>
                     </div>
                 </div>
@@ -872,7 +849,7 @@
                         <div class="loc-sub-tag">LOCATIONS & SCENARIO COMPARISON</div>
                         <h2 class="dash-location-title">Location Comparison Matrix</h2>
                         <div class="dash-meta-row">
-                            <span>Compare weather and risk conditions across multiple locations using the current live weather snapshot</span>
+                            <span>Only the selected location’s current Open-Meteo forecast is available for comparison.</span>
                         </div>
                     </div>
                 </div>
@@ -886,7 +863,7 @@
                         <div class="loc-sub-tag">AI/ML HYDROLOGICAL INFERENCE</div>
                         <h2 class="dash-location-title">MeghDrishti AI Insights</h2>
                         <div class="dash-meta-row">
-                            <span>Illustrative workflow only; no inference model or official bulletin generator is connected</span>
+                            <span>Rule-based analysis of available weather data; no official bulletin generator is connected.</span>
                         </div>
                     </div>
                 </div>
@@ -923,15 +900,15 @@
                     <div class="settings-card">
                         <h3>Responder Profile</h3>
                         <div class="form-group" style="margin-top:14px;">
-                            <label class="form-label">Full Name</label>
+                            <label class="form-label" for="setting-full-name">Full Name</label>
                             <input type="text" id="setting-full-name" class="form-input">
                         </div>
                         <div class="form-group" style="margin-top:12px;">
-                            <label class="form-label">Email Address</label>
+                            <label class="form-label" for="setting-email">Email Address</label>
                             <input type="email" id="setting-email" class="form-input" disabled style="opacity:0.7;">
                         </div>
                         <div class="form-group" style="margin-top:12px;">
-                            <label class="form-label">Organization / Agency</label>
+                            <label class="form-label" for="setting-org">Organization / Agency</label>
                             <input type="text" id="setting-org" class="form-input">
                         </div>
                         <button id="btn-save-profile" class="btn-primary" style="margin-top:18px;">
@@ -946,7 +923,7 @@
                                 <span class="pref-title">Color theme</span>
                                 <span class="pref-sub">Choose a light or dark workspace</span>
                             </div>
-                            <select id="pref-theme-select" class="custom-select" style="width:130px;">
+                            <select id="pref-theme-select" class="custom-select" aria-label="Color theme" style="width:130px;">
                                 <option value="light">Light</option>
                                 <option value="dark">Dark</option>
                             </select>
@@ -956,7 +933,7 @@
                                 <span class="pref-title">Temperature Unit</span>
                                 <span class="pref-sub">Celsius (°C) or Fahrenheit (°F)</span>
                             </div>
-                            <select id="pref-temp-select" class="custom-select" style="width:130px;">
+                            <select id="pref-temp-select" class="custom-select" aria-label="Temperature unit" style="width:130px;">
                                 <option value="celsius">Celsius (°C)</option>
                                 <option value="fahrenheit">Fahrenheit (°F)</option>
                             </select>
@@ -966,7 +943,7 @@
                                 <span class="pref-title">Wind Velocity</span>
                                 <span class="pref-sub">Kilometers/hour, mph, or meters/sec</span>
                             </div>
-                            <select id="pref-wind-select" class="custom-select" style="width:130px;">
+                            <select id="pref-wind-select" class="custom-select" aria-label="Wind speed unit" style="width:130px;">
                                 <option value="kmh">km/h</option>
                                 <option value="mph">mph</option>
                                 <option value="ms">m/s</option>
@@ -977,7 +954,7 @@
                                 <span class="pref-title">Atmospheric Pressure</span>
                                 <span class="pref-sub">Hectopascals or Inches of Mercury</span>
                             </div>
-                            <select id="pref-pressure-select" class="custom-select" style="width:130px;">
+                            <select id="pref-pressure-select" class="custom-select" aria-label="Pressure unit" style="width:130px;">
                                 <option value="hpa">hPa</option>
                                 <option value="inhg">inHg</option>
                             </select>
@@ -987,7 +964,7 @@
                                 <span class="pref-title">Precipitation Depth</span>
                                 <span class="pref-sub">Millimeters or Inches</span>
                             </div>
-                            <select id="pref-precip-select" class="custom-select" style="width:130px;">
+                            <select id="pref-precip-select" class="custom-select" aria-label="Precipitation unit" style="width:130px;">
                                 <option value="mm">Millimeters (mm)</option>
                                 <option value="inch">Inches (in)</option>
                             </select>
@@ -999,9 +976,9 @@
                         <div class="pref-row" style="margin-top:12px;">
                             <div class="pref-label-box">
                                 <span class="pref-title">Current Operating Mode</span>
-                                <span class="pref-sub">Changes weather source only; other products remain illustrative demo data</span>
+                                <span class="pref-sub">Changes the weather source only; other provider-based layers remain unavailable.</span>
                             </div>
-                            <select id="setting-mode-select" class="custom-select" style="width:180px;">
+                            <select id="setting-mode-select" class="custom-select" aria-label="Weather data mode" style="width:180px;">
                                 <option value="live">OPEN-METEO WEATHER</option>
                                 <option value="demo">DEMO WEATHER</option>
                             </select>
@@ -1011,14 +988,14 @@
                                 <span class="pref-title">Doppler Weather Radar Connector</span>
                                 <span class="pref-sub">No live radar provider configured</span>
                             </div>
-                            <span class="mono" style="color:var(--color-watch); font-size:0.8rem;">DEMO VALUES ONLY</span>
+                            <span class="mono" style="color:var(--text-muted); font-size:0.8rem;">UNAVAILABLE</span>
                         </div>
                         <div class="pref-row">
                             <div class="pref-label-box">
                                 <span class="pref-title">Satellite Provider Connector</span>
                                 <span class="pref-sub">No live satellite provider configured</span>
                             </div>
-                            <span class="mono" style="color:var(--color-watch); font-size:0.8rem;">DEMO VALUES ONLY</span>
+                            <span class="mono" style="color:var(--text-muted); font-size:0.8rem;">UNAVAILABLE</span>
                         </div>
                     </div>
 
@@ -1050,19 +1027,19 @@
                 <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V19h14v-8.5"/><path d="M9 19v-6h6v6"/></svg></span>
                 <span>Home</span>
             </a>
-            <a href="#/rainfall" class="mobile-nav-item" data-route="/rainfall">
+            <a href="#/weather" class="mobile-nav-item" data-route="/weather">
                 <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 16a5 5 0 0 1 0-10 6.5 6.5 0 0 1 12.5 2.75A4.5 4.5 0 0 1 17 16H7Z"/><path d="M8 17v2M12 17v3M16 17v2"/></svg></span>
                 <span>Weather</span>
             </a>
-            <a href="#/radar" class="mobile-nav-item" data-route="/radar">
+            <a href="#/map" class="mobile-nav-item" data-route="/map">
                 <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 14h16"/><path d="M12 4v16"/><circle cx="12" cy="12" r="7"/><path d="M12 12l6-6"/><path d="M12 12l-6 6"/></svg></span>
                 <span>Map</span>
             </a>
-            <a href="#/flood-risk" class="mobile-nav-item" data-route="/flood-risk">
+            <a href="#/alerts" class="mobile-nav-item" data-route="/alerts">
                 <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 15c2-1 4-1 6 0s4 1 6 0 4-1 6 0"/><path d="M6 18c1.5-1 3-1 4.5 0S15.5 19 17 18"/><path d="M12 3C8 6 6 9 6 12a6 6 0 0 0 12 0c0-3-2-6-6-9Z"/></svg></span>
                 <span>Alerts</span>
             </a>
-            <a href="#/alerts" class="mobile-nav-item" data-route="/alerts">
+            <a href="#/settings" class="mobile-nav-item" data-route="/settings">
                 <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a7 7 0 0 1 7 7v5l2 3H3l2-3V10a7 7 0 0 1 7-7Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>
                 <span>More</span>
             </a>

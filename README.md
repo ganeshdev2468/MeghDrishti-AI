@@ -6,7 +6,7 @@
 ## Project Status
 MeghDrishti contains a Kotlin/Jetpack Compose Android app and a static HTML/CSS/JavaScript dashboard. It is a local demonstration, not an operational ISRO/IMD system.
 
-The web client fetches weather forecasts from Open-Meteo and searches a predefined list of 20 Andhra Pradesh cities with Nellore as the default. A location-data version migration updates only saved locations in browser localStorage, preserving profiles, preferences, and other app data. Radar, satellite, ground-station, NWP, inundation, alert, and observability panels use illustrative demo values. No official warning feed, public alert broadcast, or project-owned API backend is connected. There is no service on port 8081 and no `/api/health` endpoint.
+The web client fetches current and forecast weather from Open-Meteo and searches a predefined list of 20 Andhra Pradesh cities with Nellore as the default. A location-data version migration updates only saved locations in browser localStorage, preserving profiles, preferences, and other app data. The web dashboard marks radar, satellite, ground observations, NWP comparison, flood-risk modeling, historical baselines, and official warning data unavailable because those providers are not connected. Its optional demo weather mode is clearly labelled and uses simulated values without observation timestamps. No public alert broadcast or project-owned API backend is connected. There is no service on port 8081 and no `/api/health` endpoint.
 
 The Android app fetches station weather from Open-Meteo and has Firebase and Gemini integrations, but the checked-in Firebase configuration is a placeholder. Other Android radar, satellite, NWP, and inundation data is simulated. Alerts are local drills only.
 
@@ -15,7 +15,7 @@ The Android app fetches station weather from Open-Meteo and has Firebase and Gem
 ## Web Dashboard
 The dashboard is a static client-side application served by `serve.ps1`. Its app routes use URL hashes; missing files return HTTP 404. The responsive dashboard supports light and dark themes; the selected theme is stored with local browser preferences.
 
-The browser makes direct requests to Open-Meteo's public forecast API using the selected city's coordinates; it does not use the geocoding API. Open-Meteo's forecast endpoint does not require an API key. Leaflet, OpenStreetMap tiles, fonts, and profile images are loaded from external hosts. All other weather products and warning/response examples are marked as demo data. Browser sign-in and profiles are local-only and are not production authentication.
+The browser makes direct requests to Open-Meteo's public forecast API using the selected city's coordinates; it does not use the geocoding API. Open-Meteo's forecast endpoint does not require an API key. Leaflet, OpenStreetMap tiles, fonts, and profile images are loaded from external hosts. Unconnected weather products and warning feeds display unavailable states; rule-based AI weather insights are advisory and use available forecast variables. Browser sign-in and profiles are local-only and are not production authentication.
 
 ---
 

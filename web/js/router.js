@@ -90,7 +90,11 @@ export class Router {
 
         const searchParams = new URLSearchParams(cleanQuery);
         const queryString = searchParams.toString() ? `?${searchParams.toString()}` : '';
-        const fullUrl = `/#${path}${queryString}`;
+        const currentPath = window.location.pathname;
+        const basePath = currentPath.endsWith('/')
+            ? currentPath
+            : `${currentPath.slice(0, currentPath.lastIndexOf('/') + 1)}`;
+        const fullUrl = `${basePath || '/'}#${path}${queryString}`;
 
         if (replace) {
             window.history.replaceState({}, '', fullUrl);
@@ -133,9 +137,8 @@ export class Router {
         if (PUBLIC_ROUTES.includes(path)) {
             if (isAuth) {
                 // If user is already logged in, redirect away from login/signup to dashboard
-                const redirectTarget = query.redirect || '/dashboard';
-                window.history.replaceState({}, '', `/#${redirectTarget}`);
-                this.handleLocationChange();
+                const redirectTarget = new URL(query.redirect || '/dashboard', window.location.origin);
+                this.navigate(redirectTarget.pathname, Object.fromEntries(redirectTarget.searchParams.entries()), true);
                 return;
             }
         }

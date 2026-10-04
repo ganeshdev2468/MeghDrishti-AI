@@ -80,7 +80,7 @@ export class WeatherService {
     /**
      * Retrieve normalized real-time weather and comprehensive operations payload
      */
-    async getWeather(location) {
+    async getWeather(location, { forceRefresh = false } = {}) {
         const { lat, lon, name, timezone } = location;
         const cacheKey = `weather:${this.dataMode}:${lat.toFixed(4)}_${lon.toFixed(4)}`;
 
@@ -88,6 +88,8 @@ export class WeatherService {
         if (this.inFlightRequests.has(cacheKey)) {
             return this.inFlightRequests.get(cacheKey);
         }
+
+        if (forceRefresh) this.cache.delete(cacheKey);
 
         // Check memory cache
         if (this.cache.has(cacheKey)) {
@@ -121,15 +123,21 @@ export class WeatherService {
             ]);
 
             // 3. Generate Rainfall Nowcast (15 to 180 min)
-            const currentPrecip = raw.current?.precipitation || radarData.rainfallRateEstimated || 0;
-            const nowcastData = dataCoordinator.nowcastEngine.generateNowcast(currentPrecip, lat, lon);
+            const nowcastData = dataCoordinator.nowcastEngine.generateNowcast(null, lat, lon);
 
             // 4. Normalize synoptic data
             const cur = raw.current || {};
             const hourly = raw.hourly || {};
             const daily = raw.daily || {};
             const tz = raw.timezone || timezone || 'UTC';
-            const wmoInfo = WMO_CODE_MAP[cur.weather_code] || { label: 'Partly Cloudy', icon: '⛅', type: 'cloudy' };
+            const wmoInfo = WMO_CODE_MAP[cur.weather_code] || { label: 'Unavailable', icon: '—', type: 'unavailable' };
+            let forecastStartIndex = 0;
+            if (Array.isArray(hourly.time) && cur.time) {
+                const currentHour = cur.time.slice(0, 13);
+                let matchingIndex = hourly.time.findIndex(time => time.startsWith(currentHour));
+                if (matchingIndex < 0) matchingIndex = hourly.time.findIndex(time => time >= cur.time);
+                if (matchingIndex >= 0) forecastStartIndex = matchingIndex;
+            }
 
             const snapshot = {
                 location: {
@@ -138,28 +146,29 @@ export class WeatherService {
                     country: location.country || '',
                     lat: lat,
                     lon: lon,
-                    elevation: raw.elevation || 14
+                    elevation: raw.elevation ?? null
                 },
                 timezone: tz,
-                timestamp: new Date().toISOString(),
-                temperature: cur.temperature_2m ?? 28,
-                feelsLike: cur.apparent_temperature ?? cur.temperature_2m ?? 30,
-                humidity: cur.relative_humidity_2m ?? 75,
-                pressure: cur.surface_pressure ?? 1008,
-                precipitation: cur.precipitation ?? 0,
-                rain: cur.rain ?? 0,
-                windSpeed: cur.wind_speed_10m ?? 24,
-                windDirection: cur.wind_direction_10m ?? 240,
-                windGust: cur.wind_gusts_10m ?? 38,
-                visibility: (hourly.visibility && hourly.visibility[0] ? hourly.visibility[0] / 1000 : 8.5),
-                uvIndex: (daily.uv_index_max && daily.uv_index_max[0]) ? daily.uv_index_max[0] : 6,
-                cloudCover: cur.cloud_cover ?? 85,
+                timestamp: cur.time || null,
+                available: weatherResult.available !== false && Object.entries(cur).some(([key, value]) => key !== 'time' && value != null),
+                temperature: cur.temperature_2m ?? null,
+                feelsLike: cur.apparent_temperature ?? null,
+                humidity: cur.relative_humidity_2m ?? null,
+                pressure: cur.surface_pressure ?? null,
+                precipitation: cur.precipitation ?? null,
+                rain: cur.rain ?? null,
+                windSpeed: cur.wind_speed_10m ?? null,
+                windDirection: cur.wind_direction_10m ?? null,
+                windGust: cur.wind_gusts_10m ?? null,
+                visibility: hourly.visibility?.[forecastStartIndex] != null ? hourly.visibility[forecastStartIndex] / 1000 : null,
+                uvIndex: hourly.uv_index?.[forecastStartIndex] ?? null,
+                cloudCover: cur.cloud_cover ?? null,
                 isDay: cur.is_day === 1,
                 sunrise: daily.sunrise && daily.sunrise[0] ? daily.sunrise[0] : null,
                 sunset: daily.sunset && daily.sunset[0] ? daily.sunset[0] : null,
                 condition: wmoInfo.label,
                 conditionIcon: wmoInfo.icon,
-                conditionCode: cur.weather_code ?? 0,
+                conditionCode: cur.weather_code ?? null,
                 source: weatherProvenance.source,
                 isDemo: weatherResult.isDemo || this.dataMode === DataMode.DEMO,
                 provenance: weatherProvenance
@@ -168,21 +177,17 @@ export class WeatherService {
             // 5. Hourly Forecast
             const hourlyItems = [];
             if (hourly.time && hourly.time.length) {
-                const nowIsoHour = new Date().toISOString().slice(0, 13);
-                let startIdx = hourly.time.findIndex(t => t.startsWith(nowIsoHour));
-                if (startIdx < 0) startIdx = 0;
-
-                for (let i = startIdx; i < Math.min(startIdx + 24, hourly.time.length); i++) {
+                for (let i = forecastStartIndex; i < Math.min(forecastStartIndex + 24, hourly.time.length); i++) {
                     const code = hourly.weather_code ? hourly.weather_code[i] : 0;
-                    const info = WMO_CODE_MAP[code] || { label: 'Clear', icon: '☀️' };
+                    const info = WMO_CODE_MAP[code] || { label: 'Unavailable', icon: '—' };
                     hourlyItems.push({
                         time: hourly.time[i],
-                        temp: hourly.temperature_2m ? hourly.temperature_2m[i] : 0,
-                        humidity: hourly.relative_humidity_2m ? hourly.relative_humidity_2m[i] : 0,
-                        precipitationProbability: hourly.precipitation_probability ? hourly.precipitation_probability[i] : 0,
-                        rainAmount: hourly.precipitation ? hourly.precipitation[i] : 0,
-                        windSpeed: hourly.wind_speed_10m ? hourly.wind_speed_10m[i] : 0,
-                        windDirection: hourly.wind_direction_10m ? hourly.wind_direction_10m[i] : 0,
+                        temp: hourly.temperature_2m?.[i] ?? null,
+                        humidity: hourly.relative_humidity_2m?.[i] ?? null,
+                        precipitationProbability: hourly.precipitation_probability?.[i] ?? null,
+                        rainAmount: hourly.precipitation?.[i] ?? null,
+                        windSpeed: hourly.wind_speed_10m?.[i] ?? null,
+                        windDirection: hourly.wind_direction_10m?.[i] ?? null,
                         condition: info.label,
                         icon: info.icon
                     });
@@ -194,63 +199,20 @@ export class WeatherService {
             if (daily.time && daily.time.length) {
                 for (let i = 0; i < Math.min(14, daily.time.length); i++) {
                     const code = daily.weather_code ? daily.weather_code[i] : 0;
-                    const info = WMO_CODE_MAP[code] || { label: 'Clear', icon: '☀️' };
+                    const info = WMO_CODE_MAP[code] || { label: 'Unavailable', icon: '—' };
                     dailyItems.push({
                         date: daily.time[i],
-                        maxTemp: daily.temperature_2m_max ? daily.temperature_2m_max[i] : 0,
-                        minTemp: daily.temperature_2m_min ? daily.temperature_2m_min[i] : 0,
-                        rainProbability: daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : 0,
-                        precipitationSum: daily.precipitation_sum ? daily.precipitation_sum[i] : 0,
-                        uvMax: daily.uv_index_max ? daily.uv_index_max[i] : 0,
-                        windMax: daily.wind_speed_10m_max ? daily.wind_speed_10m_max[i] : 0,
+                        maxTemp: daily.temperature_2m_max?.[i] ?? null,
+                        minTemp: daily.temperature_2m_min?.[i] ?? null,
+                        rainProbability: daily.precipitation_probability_max?.[i] ?? null,
+                        precipitationSum: daily.precipitation_sum?.[i] ?? null,
+                        uvMax: daily.uv_index_max?.[i] ?? null,
+                        windMax: daily.wind_speed_10m_max?.[i] ?? null,
                         condition: info.label,
                         icon: info.icon
                     });
                 }
             }
-
-            // 7. Dynamic Storm Cells (TITAN/SCIT)
-            const stormCells = [
-                {
-                    id: 'CELL-IN-902',
-                    centroid: `${(lat + 0.12).toFixed(4)}° N, ${(lon - 0.08).toFixed(4)}° E`,
-                    maxReflectivityDbz: 56.5,
-                    echoTopKm: 15.2,
-                    speedKts: 18,
-                    azimuthDeg: 245,
-                    vilKgM2: 52.4,
-                    hailProbPct: 78,
-                    severity: 'SEVERE CONVECTIVE'
-                },
-                {
-                    id: 'CELL-IN-903',
-                    centroid: `${(lat - 0.18).toFixed(4)}° N, ${(lon + 0.15).toFixed(4)}° E`,
-                    maxReflectivityDbz: 48.0,
-                    echoTopKm: 12.8,
-                    speedKts: 14,
-                    azimuthDeg: 230,
-                    vilKgM2: 36.0,
-                    hailProbPct: 35,
-                    severity: 'MODERATE CONVECTIVE'
-                },
-                {
-                    id: 'CELL-IN-904',
-                    centroid: `${(lat + 0.28).toFixed(4)}° N, ${(lon + 0.22).toFixed(4)}° E`,
-                    maxReflectivityDbz: 42.5,
-                    echoTopKm: 10.4,
-                    speedKts: 22,
-                    azimuthDeg: 260,
-                    vilKgM2: 24.5,
-                    hailProbPct: 15,
-                    severity: 'DEVELOPING CELL'
-                }
-            ];
-
-            // 8. Dynamic Inundation & Hydrodynamic Risk
-            const floodRiskScore = Math.min(96, Math.max(20, Math.round(
-                (snapshot.precipitation * 1.8) + (groundObs.accumulations.r24h * 0.25) + 30
-            )));
-            const floodRiskLevel = floodRiskScore > 75 ? 'VERY HIGH' : (floodRiskScore > 50 ? 'HIGH' : (floodRiskScore > 25 ? 'MODERATE' : 'LOW'));
 
             const normalizedResult = {
                 snapshot,
@@ -262,22 +224,8 @@ export class WeatherService {
                 nwp: nwpEnsemble,
                 hydroTerrain: hydroTerrain,
                 nowcast: nowcastData,
-                stormCells: stormCells,
-                floodRisk: {
-                    score: floodRiskScore,
-                    level: floodRiskLevel,
-                    affectedAreaKm2: parseFloat((floodRiskScore * 0.48).toFixed(1)),
-                    timeWindow: 'Next 60 – 180 Minutes',
-                    confidence: '84% (Uncertainty ±6 mm/hr)',
-                    contributingFactors: [
-                        `High precipitation rate (${snapshot.precipitation.toFixed(1)} mm/hr) detected by Doppler radar`,
-                        `Antecedent 24h rainfall ${groundObs.accumulations.r24h} mm causing ${hydroTerrain.soilMoistureSaturationPct}% soil saturation`,
-                        `Low-lying urban topography (CartoDEM elevation ${hydroTerrain.cartoDemElevationM}m, slope ${hydroTerrain.averageSlopeDeg}°)`,
-                        `High impervious surface fraction (${Math.round(hydroTerrain.imperviousSurfaceFraction * 100)}%) preventing natural infiltration`,
-                        'NWP convective instability convergence line stagnating over drainage basin'
-                    ],
-                    provenance: alertsData.aiEarlyWarnings[0].provenance
-                },
+                stormCells: [],
+                floodRisk: { available: false, reason: 'Live flood-risk modeling is not connected.' },
                 alerts: alertsData,
                 observability: dataCoordinator.observability,
                 lastUpdated: new Date()
