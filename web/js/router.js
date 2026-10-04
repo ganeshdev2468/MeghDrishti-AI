@@ -20,6 +20,7 @@ const AUTH_ROUTES = [
     '/map',
     '/forecast',
     '/history',
+    '/compare',
     '/ai-analysis',
     '/operations',
     '/settings'

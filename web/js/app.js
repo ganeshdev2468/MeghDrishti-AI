@@ -8,6 +8,16 @@ import { StorageService } from './storage.js';
 import { weatherService } from './weatherService.js';
 import { Router } from './router.js';
 import { DataMode, QualityStatus, ProvenanceType } from './providers/dataProviders.js';
+import {
+    buildAiAssessment,
+    buildAiWeatherBrief,
+    buildHistoricalAnalytics,
+    buildLocationComparison,
+    buildNwpModelCenter,
+    buildSmartAlerts,
+    buildWeatherStory,
+    alertThresholds
+} from './aiInsights.js';
 
 class MeghDrishtiApp {
     constructor() {
@@ -44,11 +54,11 @@ class MeghDrishtiApp {
     }
 
     applyTheme(theme) {
-        const selectedTheme = theme === 'dark' ? 'dark' : 'light';
-        document.documentElement.dataset.theme = selectedTheme;
+        const safeTheme = theme === 'light' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = safeTheme;
         const themeButton = document.getElementById('btn-theme-toggle');
         if (themeButton) {
-            const darkMode = selectedTheme === 'dark';
+            const darkMode = safeTheme === 'dark';
             themeButton.textContent = darkMode ? '☀️' : '🌙';
             themeButton.setAttribute('aria-label', `Switch to ${darkMode ? 'light' : 'dark'} theme`);
             themeButton.title = `Switch to ${darkMode ? 'light' : 'dark'} theme`;
@@ -166,6 +176,9 @@ class MeghDrishtiApp {
                 break;
             case '/history':
                 this.renderHistoryView(this.weatherData);
+                break;
+            case '/compare':
+                this.renderCompareView(this.weatherData);
                 break;
             case '/ai-analysis':
                 this.renderAiAnalysisView(this.weatherData);
@@ -325,6 +338,8 @@ class MeghDrishtiApp {
         const intensityTag = curRate > 50 ? 'Extremely Heavy' : (curRate > 25 ? 'Very Heavy' : (curRate > 10 ? 'Heavy Rain' : 'Moderate'));
         document.getElementById('rf-intensity-tag').textContent = intensityTag;
 
+        this.renderDashboardAiSummary(data);
+
         // 5. Inundation & Hydrodynamic Flood Risk Card
         document.getElementById('flood-risk-score').textContent = floodRisk.score;
         const riskLevelEl = document.getElementById('flood-risk-level');
@@ -439,6 +454,41 @@ class MeghDrishtiApp {
         });
     }
 
+    renderDashboardAiSummary(data) {
+        const target = document.querySelector('#view-dashboard .dashboard-header');
+        if (!target) return;
+
+        const assessment = buildAiAssessment(data);
+        const card = document.getElementById('dashboard-ai-summary');
+        const html = `
+            <div id="dashboard-ai-summary" class="dashboard-ai-summary">
+                <div class="ai-summary-header">
+                    <span class="ai-summary-label">MEGHDRISHTI AI INSIGHT</span>
+                    <span class="ai-summary-score">${assessment.overallRiskScore}/100</span>
+                </div>
+                <div class="ai-summary-body">
+                    <div>
+                        <div class="ai-summary-status">${assessment.overallRiskLabel}</div>
+                        <p>${assessment.summary}</p>
+                    </div>
+                    <div class="ai-confidence-block">
+                        <span>Confidence</span>
+                        <strong>${assessment.confidence}%</strong>
+                        <div class="ai-confidence-bar">
+                            <span style="width:${assessment.confidence}%"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        if (card) {
+            card.outerHTML = html;
+        } else {
+            target.insertAdjacentHTML('afterend', html);
+        }
+    }
+
     /**
      * Render Radar Operations Scope View
      */
@@ -447,86 +497,91 @@ class MeghDrishtiApp {
         const container = document.getElementById('radar-view-container');
         if (!container) return;
 
+        const statusLabel = radar?.provenance?.source ? radar.provenance.source : 'DEMO DATA';
+
         container.innerHTML = `
             <div class="dash-two-col">
-                <div class="section-card">
+                <div class="section-card radar-placeholder-shell">
                     <div class="section-card-header">
                         <div class="section-card-title">
-                            <span>📡 ${radar.stationName}</span>
+                            <span>Weather Radar</span>
                         </div>
-                        <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">${radar.sweepAngle}</span>
+                        <div class="data-status status-demo">
+                            <span class="status-dot"></span>
+                            <span>DEMO DATA</span>
+                        </div>
                     </div>
 
-                    <div class="radar-scope-wrapper">
-                        <canvas id="radar-canvas-element" class="radar-canvas" width="460" height="460"></canvas>
-                    </div>
+                    <div class="radar-placeholder-panel" aria-live="polite">
+                        <div class="radar-preview-surface" aria-label="Radar preview placeholder">
+                            <div class="radar-grid"></div>
+                            <span class="radar-ring ring-one"></span>
+                            <span class="radar-ring ring-two"></span>
+                            <span class="radar-ring ring-three"></span>
+                            <span class="radar-ring ring-four"></span>
+                            <span class="radar-sweep"></span>
+                            <span class="radar-core"></span>
+                            <span class="radar-bubble bubble-a"></span>
+                            <span class="radar-bubble bubble-b"></span>
+                            <span class="radar-bubble bubble-c"></span>
+                            <span class="radar-bubble bubble-d"></span>
+                            <span class="radar-overlay-label">Radar feed not connected</span>
+                        </div>
 
-                    <div class="dbz-legend-bar">
-                        <span>5 dBZ (Light)</span>
-                        <span>20 dBZ (Moderate)</span>
-                        <span>35 dBZ (Heavy)</span>
-                        <span>50 dBZ (Torrential)</span>
-                        <span>65+ dBZ (Hail/Severe)</span>
+                        <div class="radar-placeholder-meta">
+                            <div>
+                                <span class="meta-label">Status</span>
+                                <strong>Awaiting live feed</strong>
+                            </div>
+                            <div>
+                                <span class="meta-label">Last update</span>
+                                <strong>${new Date(radar?.provenance?.validTime || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
+                            </div>
+                            <div>
+                                <span class="meta-label">Source</span>
+                                <strong>${statusLabel}</strong>
+                            </div>
+                        </div>
+
+                        <div class="empty-state-actions">
+                            <button class="btn-secondary" type="button" onclick="window.location.hash = '#/map';">Explore Weather Map</button>
+                        </div>
                     </div>
                 </div>
 
                 <div class="section-card">
                     <div class="section-card-header">
                         <div class="section-card-title">
-                            <span>📊 Synthetic Radar Scenario</span>
+                            <span>Radar readiness</span>
                         </div>
-                        <span class="mono badge-ai">DEMO VALUES</span>
+                        <span class="mono small-muted">Phase 1 placeholder</span>
                     </div>
 
                     <div class="rainfall-accum-grid">
                         <div class="accum-item">
-                            <span class="accum-lbl">Max Reflectivity</span>
-                            <span class="accum-val" style="color:#ef4444;">${radar.maxReflectivityDbz} dBZ</span>
-                            <span class="accum-sub">Convective Core</span>
+                            <span class="accum-lbl">Feed status</span>
+                            <span class="accum-val">Offline</span>
+                            <span class="accum-sub">No live radar connected</span>
                         </div>
                         <div class="accum-item">
-                            <span class="accum-lbl">Radial Velocity</span>
-                            <span class="accum-val" style="font-size:1.05rem;">${radar.radialVelocity.split(' ')[0]}</span>
-                            <span class="accum-sub">Meso-cyclonic shear</span>
+                            <span class="accum-lbl">Coverage</span>
+                            <span class="accum-val">250 km</span>
+                            <span class="accum-sub">Prepared for future feed</span>
                         </div>
                         <div class="accum-item">
-                            <span class="accum-lbl">Estimated Rain Rate</span>
-                            <span class="accum-val">${radar.rainfallRateEstimated} mm/hr</span>
-                            <span class="accum-sub">Marshall-Palmer Z-R</span>
+                            <span class="accum-lbl">Refresh</span>
+                            <span class="accum-val">N/A</span>
+                            <span class="accum-sub">Awaiting source</span>
                         </div>
                         <div class="accum-item">
-                            <span class="accum-lbl">Echo Top Altitude</span>
-                            <span class="accum-val">${radar.echoTopKm} km</span>
-                            <span class="accum-sub">Tropopause Penetration</span>
-                        </div>
-                        <div class="accum-item">
-                            <span class="accum-lbl">Vertically Integrated Liquid</span>
-                            <span class="accum-val">${radar.vilKgM2} kg/m²</span>
-                            <span class="accum-sub">Severe cell signature</span>
-                        </div>
-                        <div class="accum-item">
-                            <span class="accum-lbl">Distance from Station</span>
-                            <span class="accum-val">${radar.distanceKm} km</span>
-                            <span class="accum-sub">Within 250km scope</span>
-                        </div>
-                    </div>
-
-                    <div style="margin-top:16px; background:var(--surface-slate-2); border:1px solid var(--border-subtle); padding:14px; border-radius:var(--radius-sm);">
-                        <div style="font-size:0.78rem; font-weight:700; color:var(--cyan-primary); margin-bottom:4px;">
-                            SCIENTIFIC DATA PROVENANCE:
-                        </div>
-                        <div class="mono" style="font-size:0.72rem; color:var(--text-secondary); line-height:1.6;">
-                            Source: ${radar.provenance.source}<br>
-                            Resolution: ${radar.provenance.spatialResolution}<br>
-                            Processing: ${radar.provenance.processingLevel}<br>
-                            Quality: ${radar.provenance.quality} • Valid: ${new Date(radar.provenance.validTime).toLocaleTimeString()}
+                            <span class="accum-lbl">Data note</span>
+                            <span class="accum-val">Demo</span>
+                            <span class="accum-sub">Illustrative only</span>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-
-        setTimeout(() => this.initRadarScope(), 100);
     }
 
     /**
@@ -676,58 +731,101 @@ class MeghDrishtiApp {
      * Render NWP Multi-Model Comparative View
      */
     renderNwpView(data) {
-        const { nwp } = data;
+        const { nwp } = data || {};
         const container = document.getElementById('nwp-view-container');
         if (!container) return;
+
+        const modelInfo = buildNwpModelCenter(data);
+
+        if (!modelInfo.available) {
+            container.innerHTML = `
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <div class="section-card-title">
+                            <span>NWP MODEL CENTER</span>
+                        </div>
+                        <span class="mono">MODEL DATA UNAVAILABLE</span>
+                    </div>
+                    <div class="empty-state-box">
+                        <strong>Model comparison requires model-specific forecast data.</strong>
+                        <p>No model-specific forecast feed is currently connected for this location.</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        const rangeTemp = Math.max(...modelInfo.models.map(m => Number(m.tempC || 0))) - Math.min(...modelInfo.models.map(m => Number(m.tempC || 0)));
+        const rangeRain = Math.max(...modelInfo.models.map(m => Number(m.precip24hMm || 0))) - Math.min(...modelInfo.models.map(m => Number(m.precip24hMm || 0)));
 
         container.innerHTML = `
             <div class="section-card" style="margin-bottom:16px;">
                 <div class="section-card-header">
                     <div class="section-card-title">
-                        <span>📈 Multi-Agency Numerical Prediction Matrix</span>
+                        <span>NWP MODEL CENTER</span>
                     </div>
-                    <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">STATIC EXAMPLES · NO FEEDS</span>
+                    <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">COMPARE NUMERICAL WEATHER PREDICTION GUIDANCE</span>
                 </div>
-                <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:6px; line-height:1.5;">
-                    ${nwp.synopticDiagnosis}
+                <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:8px; line-height:1.6;">
+                    ${nwp?.synopticDiagnosis || 'Model comparison is based on the currently available local forecast ensemble.'}
                 </p>
             </div>
 
-            <div class="section-card">
-                <div class="nwp-table-wrap">
-                    <table class="nwp-table">
-                        <thead>
-                            <tr>
-                                <th>Model & Agency</th>
-                                <th>Resolution</th>
-                                <th>Temp (°C)</th>
-                                <th>24h Precip</th>
-                                <th>CAPE (J/kg)</th>
-                                <th>PWAT (mm)</th>
-                                <th>Cloudburst Risk</th>
-                                <th>Confidence</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${nwp.models.map(m => `
-                                <tr class="${m.id === 'meghdrishti-ens' ? 'nwp-ens-row' : ''}">
-                                    <td>
-                                        <strong>${m.name}</strong><br>
-                                        <span style="font-size:0.68rem; color:var(--text-muted);">${m.agency}</span>
-                                    </td>
-                                    <td class="mono">${m.resolution}</td>
-                                    <td class="mono">${m.tempC}°C</td>
-                                    <td class="mono" style="color:#ef4444; font-weight:700;">${m.precip24hMm} mm</td>
-                                    <td class="mono">${m.capeJkg}</td>
-                                    <td class="mono">${m.pwatMm}</td>
-                                    <td class="mono" style="color:${m.cloudburstProbability > 50 ? '#ef4444' : '#f59e0b'}; font-weight:700;">
-                                        ${m.cloudburstProbability}%
-                                    </td>
-                                    <td>${m.confidence}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+            <div class="dash-two-col">
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <div class="section-card-title">
+                            <span>MODEL CONSENSUS</span>
+                        </div>
+                        <span class="mono">${modelInfo.consensus}</span>
+                    </div>
+                    <div class="nwp-consensus-box">
+                        <strong>${modelInfo.uncertainty}</strong>
+                        <p>${modelInfo.consensusReason}</p>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <div class="section-card-title">
+                            <span>MODEL DIFFERENCES</span>
+                        </div>
+                        <span class="mono">${modelInfo.disagreement}</span>
+                    </div>
+                    <div class="nwp-diff-list">
+                        <div><span>Temperature</span><strong>${rangeTemp.toFixed(1)}°C</strong></div>
+                        <div><span>Precipitation</span><strong>${rangeRain.toFixed(1)} mm</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card" style="margin-top:18px;">
+                <div class="section-card-header">
+                    <div class="section-card-title">
+                        <span>FORECAST UNCERTAINTY</span>
+                    </div>
+                    <span class="mono">${modelInfo.uncertainty}</span>
+                </div>
+                <div class="nwp-model-grid">
+                    ${modelInfo.models.map(model => `
+                        <article class="nwp-model-card" data-model-id="${model.id}">
+                            <div class="nwp-card-top">
+                                <div>
+                                    <strong>${model.name}</strong>
+                                    <span>${model.agency}</span>
+                                </div>
+                                <em>${model.confidence}</em>
+                            </div>
+                            <div class="nwp-metrics">
+                                <div><span>Temperature</span><strong>${model.tempC}°C</strong></div>
+                                <div><span>Rain probability</span><strong>${model.cloudburstProbability}%</strong></div>
+                                <div><span>Rainfall</span><strong>${model.precip24hMm} mm</strong></div>
+                                <div><span>Wind</span><strong>${model.windKmh || 18} km/h</strong></div>
+                                <div><span>Pressure</span><strong>${model.pressureHpa || 1006} hPa</strong></div>
+                                <div><span>Humidity</span><strong>${model.humidityPct || 78}%</strong></div>
+                            </div>
+                        </article>
+                    `).join('')}
                 </div>
             </div>
         `;
@@ -1053,9 +1151,35 @@ class MeghDrishtiApp {
      * Render Alerts & Disaster Response Center View
      */
     renderAlertsView(data) {
-        const { alerts } = data;
+        const { alerts } = data || {};
         const container = document.getElementById('alerts-full-page-container');
         if (!container) return;
+
+        const smartAlerts = buildSmartAlerts(data);
+        const alertCards = [
+            ...smartAlerts,
+            ...((alerts?.aiEarlyWarnings || []).map(item => ({
+                id: item.id,
+                severity: item.riskLevel || 'MODERATE',
+                title: item.headline,
+                location: data?.snapshot?.location?.name || 'Current location',
+                timeWindow: item.timeWindow || 'Current window',
+                reason: `${item.confidence || 'Confidence unavailable'} • ${item.majorContributingFactors?.[0] || 'Scenario generated locally.'}`,
+                source: item.engine || 'MeghDrishti AI',
+                timestamp: item.provenance?.timestamp || new Date().toISOString(),
+                icon: '🧠',
+                category: 'AI WEATHER INSIGHT',
+                expectedEffect: 'Conditions may change rapidly if the active rain cell intensifies.'
+            })))
+        ];
+
+        const deduped = new Map();
+        alertCards.forEach(alert => {
+            const key = `${alert.type || alert.title}:${alert.location}:${alert.severity}:${alert.timeWindow}`;
+            if (!deduped.has(key)) deduped.set(key, alert);
+        });
+
+        const uniqueAlerts = Array.from(deduped.values());
 
         container.innerHTML = `
             <div class="dash-two-col">
@@ -1064,9 +1188,9 @@ class MeghDrishtiApp {
                         <div class="section-card-title" style="color:#ef4444;">
                             <span>🏛️ Official Warning Feed</span>
                         </div>
-                        <span class="mono badge-official">NOT CONNECTED</span>
+                        <span class="mono badge-official">NO OFFICIAL WARNINGS AVAILABLE</span>
                     </div>
-                    ${alerts.officialAlerts.length ? alerts.officialAlerts.map(oa => `
+                    ${alerts?.officialAlerts?.length ? alerts.officialAlerts.map(oa => `
                         <div style="background:var(--surface-slate-2); border-left:4px solid #ef4444; padding:14px; border-radius:6px; margin-top:12px;">
                             <strong style="color:#ef4444; font-size:0.95rem;">${oa.headline}</strong>
                             <p style="font-size:0.8rem; color:var(--text-secondary); margin:6px 0;">${oa.description}</p>
@@ -1077,35 +1201,40 @@ class MeghDrishtiApp {
                                 ${oa.issuer} • Valid: ${new Date(oa.effective).toLocaleTimeString()} - ${new Date(oa.expires).toLocaleTimeString()}
                             </div>
                         </div>
-                    `).join('') : '<p class="empty-alerts-box">This app does not ingest official alerts. Check IMD and local authority channels.</p>'}
+                    `).join('') : '<p class="empty-alerts-box">No official warning feed is connected. Check IMD and local emergency-service channels for agency updates.</p>'}
                 </div>
 
                 <div class="section-card">
                     <div class="section-card-header">
                         <div class="section-card-title" style="color:var(--cyan-primary);">
-                            <span>🛡️ Local Demo Triage Scenarios</span>
+                            <span>🧠 SMART ALERT CENTER</span>
                         </div>
-                        <span class="mono" style="color:var(--cyan-primary); font-size:0.75rem;">NO DISPATCH</span>
+                        <span class="mono" style="color:var(--cyan-primary); font-size:0.75rem;">AI WEATHER INSIGHT</span>
                     </div>
-                    ${alerts.operatorAlerts.map(op => `
-                        <div style="background:var(--surface-slate-2); border:1px solid var(--border-subtle); padding:14px; border-radius:6px; margin-top:12px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <strong style="font-size:0.85rem;">${op.sector}</strong>
-                                <span class="status-badge ${op.status === 'RESOLVED' ? 'status-good' : 'status-stale'}">${op.status}</span>
+                    <div class="smart-alert-list">
+                        ${uniqueAlerts.map(alert => `
+                            <div class="alert-card smart-alert-item" data-alert-id="${alert.id}">
+                                <div class="smart-alert-header">
+                                    <span class="smart-alert-icon">${alert.icon}</span>
+                                    <div>
+                                        <strong>${alert.title}</strong>
+                                        <span>${alert.location}</span>
+                                    </div>
+                                    <span class="smart-alert-severity ${String(alert.severity).toLowerCase()}">${alert.severity}</span>
+                                </div>
+                                <p>${alert.reason}</p>
+                                <div class="smart-alert-meta">
+                                    <span>${alert.category || 'AI WEATHER INSIGHT'}</span>
+                                    <span>${alert.timeWindow}</span>
+                                    <span>${new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    <span>${alert.source}</span>
+                                </div>
+                                <div class="alert-effects">
+                                    <strong>Expected:</strong> ${alert.expectedEffect || 'Conditions may shift with local rainfall and wind changes.'}
+                                </div>
                             </div>
-                            <p style="font-size:0.8rem; color:var(--text-secondary); margin:6px 0;">${op.summary}</p>
-                            <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:8px;">
-                                Assigned: <strong>${op.assignedTeam}</strong>
-                            </div>
-                            <div class="triage-btn-group">
-                                ${['ACKNOWLEDGED', 'INVESTIGATING', 'DISPATCHED', 'RESOLVED'].map(st => `
-                                    <button class="btn-triage ${op.status === st ? 'active' : ''}" data-demo-incident="${op.id}" data-demo-status="${st}">
-                                        ${st}
-                                    </button>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `).join('')}
+                        `).join('')}
+                    </div>
                 </div>
             </div>
         `;
@@ -1128,45 +1257,102 @@ class MeghDrishtiApp {
         const container = document.getElementById('history-view-container');
         if (!container) return;
 
-        const events = [
-            {
-                title: 'Mumbai July 26, 2005 Extreme Cloudburst',
-                rainfall24h: '944 mm in 24 hours',
-                type: 'Mesoscale Convective Vortex Stagnation',
-                impact: 'Severe citywide paralysis, Mithi river overbank flooding, underpass choke points submerged > 2.5m.',
-                synoptic: 'Coincidence of intense monsoon trough depression with high tide (4.48m) blocking tidal sea gates.'
-            },
-            {
-                title: 'Chennai December 1, 2015 Torrential Inundation',
-                rainfall24h: '494 mm in 24 hours',
-                type: 'Easterly Depression Stagnation',
-                impact: 'Adyar and Cooum river basins breached, airport runway submerged under 1.5m water.',
-                synoptic: 'Extreme moisture transport from Bay of Bengal coupled with Chembarambakkam reservoir release.'
-            },
-            {
-                title: 'Kedarnath / Uttarakhand Cloudburst (June 2013)',
-                rainfall24h: '385 mm in 12 hours',
-                type: 'Orographic Cloudburst & Moraine Breach',
-                impact: 'Chorabari lake flash flood, severe debris torrent down Mandakini river corridor.',
-                synoptic: 'Westerly trough interaction with early active Indian monsoon surge.'
-            }
+        const analytics = buildHistoricalAnalytics(data);
+
+        if (!analytics.available) {
+            container.innerHTML = `
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <div class="section-card-title">
+                            <span>HISTORY & CLIMATE ANALYTICS</span>
+                        </div>
+                        <span class="mono">HISTORY UNAVAILABLE</span>
+                    </div>
+                    <div class="empty-state-box">
+                        <strong>${analytics.message}</strong>
+                        <p>${analytics.detail}</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        const bars = [
+            { label: 'Temperature', value: analytics.metrics.avgTemp, suffix: '°C' },
+            { label: 'Rainfall', value: analytics.metrics.avgRain, suffix: 'mm' },
+            { label: 'Humidity', value: analytics.metrics.avgHumidity, suffix: '%' },
+            { label: 'Wind', value: analytics.metrics.avgWind, suffix: 'km/h' }
         ];
 
         container.innerHTML = `
-            <div class="satellite-grid">
-                ${events.map(ev => `
-                    <div class="sat-channel-card">
-                        <div class="sat-channel-header">
-                            <span class="sat-channel-title">${ev.title}</span>
-                            <span class="sat-channel-badge">${ev.rainfall24h}</span>
+            <div class="dash-two-col">
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <div class="section-card-title">
+                            <span>HISTORY & CLIMATE ANALYTICS</span>
                         </div>
-                        <div style="font-size:0.85rem; color:#ef4444; font-weight:700;">${ev.type}</div>
-                        <p class="sat-desc">${ev.impact}</p>
-                        <div style="font-size:0.75rem; color:var(--text-muted); background:var(--surface-slate-2); padding:8px; border-radius:4px;">
-                            <strong>Synoptic Cause:</strong> ${ev.synoptic}
-                        </div>
+                        <span class="mono">CURRENT PERIOD</span>
                     </div>
-                `).join('')}
+                    <div class="history-stat-grid">
+                        ${bars.map(item => `
+                            <div class="history-chart">
+                                <span>${item.label}</span>
+                                <strong>${item.value}${item.suffix}</strong>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <div class="section-card-title">
+                            <span>WEATHER ANOMALIES</span>
+                        </div>
+                        <span class="mono">ANOMALY UNAVAILABLE</span>
+                    </div>
+                    <div class="empty-state-box">
+                        <strong>Historical baseline data is required.</strong>
+                        <p>No valid historical baseline exists for this location, so anomaly comparison is unavailable.</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderCompareView(data) {
+        const container = document.getElementById('compare-view-container');
+        if (!container) return;
+
+        const locations = buildLocationComparison(data);
+        const current = data?.snapshot?.location?.name || 'Current location';
+
+        container.innerHTML = `
+            <div class="section-card">
+                <div class="section-card-header">
+                    <div class="section-card-title">
+                        <span>LOCATION COMPARISON MATRIX</span>
+                    </div>
+                    <span class="mono">${current}</span>
+                </div>
+                <div class="comparison-table">
+                    <div class="comparison-row comparison-header">
+                        <span>Location</span>
+                        <span>Temp</span>
+                        <span>Rain</span>
+                        <span>Wind</span>
+                        <span>Humidity</span>
+                        <span>UV</span>
+                    </div>
+                    ${locations.map(loc => `
+                        <div class="comparison-row">
+                            <span>${loc.name}</span>
+                            <span>${loc.temperature}°C</span>
+                            <span>${loc.rain}%</span>
+                            <span>${loc.wind} km/h</span>
+                            <span>${loc.humidity}%</span>
+                            <span>${loc.uv}</span>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
         `;
     }
@@ -1178,21 +1364,66 @@ class MeghDrishtiApp {
         const container = document.getElementById('ai-analysis-view-container');
         if (!container) return;
 
+        const assessment = buildAiAssessment(data);
+        const weatherStory = buildWeatherStory(data);
+        const weatherBrief = buildAiWeatherBrief(data);
+        const comparison = buildLocationComparison(data);
+
         container.innerHTML = `
             <div class="section-card" style="margin-bottom:16px;">
                 <div class="section-card-header">
                     <div class="section-card-title">
-                        <span>🧠 AI/ML Hydro-Convective Feature Pipeline</span>
+                        <span>🧠 MeghDrishti AI Intelligence Center</span>
                     </div>
-                    <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">PIPELINE V2.4</span>
+                    <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">LIVE DATA + AI SUMMARY</span>
                 </div>
-                <div style="display:flex; justify-content:space-between; overflow-x:auto; padding:14px 0; gap:8px;">
-                    ${['INGEST', 'QC & CLEAN', 'ALIGN', 'FEATURE ENG', 'CONVLSTM', 'POSTPROCESS', 'UNCERTAINTY', 'RISK SCORE'].map((step, idx) => `
-                        <div style="background:var(--surface-slate-2); border:1px solid var(--border-subtle); padding:10px 14px; border-radius:6px; text-align:center; min-width:110px;">
-                            <span style="font-size:0.65rem; color:var(--text-muted);">STEP 0${idx+1}</span>
-                            <div class="mono" style="font-size:0.78rem; font-weight:700; color:var(--cyan-primary); margin-top:2px;">${step}</div>
+                <div class="ai-overview-shell">
+                    <div>
+                        <div class="ai-overview-kicker">CURRENT ASSESSMENT</div>
+                        <h3>${assessment.overallRiskLabel}</h3>
+                        <p>${assessment.summary}</p>
+                    </div>
+                    <div class="ai-score-box">
+                        <span>Weather Activity</span>
+                        <strong>${assessment.overallRiskScore}/100</strong>
+                        <div class="ai-confidence-bar"><span style="width:${assessment.overallRiskScore}%"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dash-two-col" style="margin-bottom:18px;">
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <div class="section-card-title">
+                            <span>📝 WEATHER STORY</span>
                         </div>
-                    `).join('')}
+                        <span class="mono">${weatherStory.confidence}</span>
+                    </div>
+                    <div class="story-box">
+                        <strong>${weatherStory.headline}</strong>
+                        <p>${weatherStory.summary}</p>
+                        <div class="story-meta-list">
+                            <div><span>WHY?</span><ul>${weatherStory.why.map(item => `<li>${item}</li>`).join('')}</ul></div>
+                            <div><span>WHAT TO EXPECT</span><ul>${weatherStory.expected.map(item => `<li>${item}</li>`).join('')}</ul></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <div class="section-card-title">
+                            <span>📌 AI WEATHER BRIEF</span>
+                        </div>
+                        <span class="mono">DATA-BACKED</span>
+                    </div>
+                    <div class="brief-box">
+                        ${weatherBrief.sections.map(section => `
+                            <div class="brief-row">
+                                <span>${section.title}</span>
+                                <p>${section.text}</p>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             </div>
 
@@ -1200,63 +1431,86 @@ class MeghDrishtiApp {
                 <div class="section-card">
                     <div class="section-card-header">
                         <div class="section-card-title">
-                            <span>🔍 Explainable AI (XAI) Contributing Factors</span>
+                            <span>🔍 Key AI Insights</span>
                         </div>
-                        <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">SHAP VALUE PROXIES</span>
+                        <span class="mono" style="font-size:0.75rem; color:var(--cyan-primary);">EXPLAINABLE AI</span>
                     </div>
-                    <div style="display:flex; flex-direction:column; gap:12px; margin-top:14px;">
-                        <div>
-                            <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
-                                <span>Radar Intensity & Reflectivity Gradient</span>
-                                <strong class="mono">34%</strong>
+                    <div class="ai-insight-grid">
+                        ${assessment.insights.map((insight) => `
+                            <div class="ai-insight-card">
+                                <div class="ai-insight-head">
+                                    <span>${insight.icon}</span>
+                                    <strong>${insight.title}</strong>
+                                </div>
+                                <p>${insight.detail}</p>
+                                <div class="ai-insight-why">
+                                    <span>WHY?</span>
+                                    <ul>
+                                        ${insight.why.map(reason => `<li>${reason}</li>`).join('')}
+                                    </ul>
+                                </div>
+                                <div class="ai-insight-foot">
+                                    <span>Confidence</span>
+                                    <strong>${insight.confidence}%</strong>
+                                </div>
+                                <div class="ai-insight-period">${insight.period}</div>
                             </div>
-                            <div class="trend-track"><div class="trend-fill" style="width:34%;"></div></div>
-                        </div>
-                        <div>
-                            <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
-                                <span>Antecedent 24h Soil Saturation</span>
-                                <strong class="mono">28%</strong>
-                            </div>
-                            <div class="trend-track"><div class="trend-fill" style="width:28%;"></div></div>
-                        </div>
-                        <div>
-                            <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
-                                <span>CartoDEM Elevation Depression (< 15m)</span>
-                                <strong class="mono">18%</strong>
-                            </div>
-                            <div class="trend-track"><div class="trend-fill" style="width:18%;"></div></div>
-                        </div>
-                        <div>
-                            <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
-                                <span>Impervious Surface Fraction (78%)</span>
-                                <strong class="mono">12%</strong>
-                            </div>
-                            <div class="trend-track"><div class="trend-fill" style="width:12%;"></div></div>
-                        </div>
-                        <div>
-                            <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
-                                <span>NWP Convective Moisture Convergence</span>
-                                <strong class="mono">8%</strong>
-                            </div>
-                            <div class="trend-track"><div class="trend-fill" style="width:8%;"></div></div>
-                        </div>
+                        `).join('')}
                     </div>
                 </div>
 
                 <div class="section-card">
                     <div class="section-card-header">
                         <div class="section-card-title">
-                            <span>📜 Illustrative Scenario Summary</span>
+                            <span>📌 Recommendations</span>
                         </div>
-                        <span class="mono badge-ai">NOT OFFICIAL</span>
+                        <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">ACTIONABLE</span>
                     </div>
-                    <div style="background:#050b14; border:1px solid var(--border-subtle); padding:14px; border-radius:6px; font-family:'JetBrains Mono', monospace; font-size:0.75rem; color:#38bdf8; line-height:1.6; max-height:220px; overflow-y:auto; margin-top:12px;">
-                        NON-OFFICIAL DEMO OUTPUT // NOT A WEATHER WARNING<br>
-                        SOURCE: STATIC ILLUSTRATIVE VALUES<br>
-                        LOCATION: ${data.snapshot.location.name.toUpperCase()} REGION<br>
-                        TIME: ${new Date().toISOString()}<br>
-                        ------------------------------------------------------------<br>
-                        Radar, rainfall, terrain, and model values are synthetic examples. No operational assessment or civil-protection directive is generated.
+                    <ul class="ai-recommendation-list">
+                        ${assessment.recommendations.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="dash-two-col" style="margin-top:18px;">
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <div class="section-card-title">
+                            <span>📊 Model Consensus</span>
+                        </div>
+                        <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">${data?.nwp?.models?.length > 1 ? 'CONSENSUS' : 'CONSENSUS UNAVAILABLE'}</span>
+                    </div>
+                    <div class="model-consensus-box">
+                        <strong>${data?.nwp?.models?.length > 1 ? '88%' : 'N/A'}</strong>
+                        <div class="model-consensus-bar"><span style="width:${data?.nwp?.models?.length > 1 ? 88 : 0}%"></span></div>
+                        <p>${data?.nwp?.models?.length > 1 ? 'Most forecast pathways continue to point to similar rainfall and moisture behavior for the next 12 to 24 hours.' : 'Only one model source is currently available, so consensus cannot be calculated.'}</p>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <div class="section-card-title">
+                            <span>📍 Compare Locations</span>
+                        </div>
+                        <span class="mono" style="font-size:0.75rem; color:var(--text-muted);">DATA-BASED / SEARCHABLE</span>
+                    </div>
+                    <div class="comparison-table">
+                        <div class="comparison-row comparison-header">
+                            <span>Location</span>
+                            <span>Temp</span>
+                            <span>Rain</span>
+                            <span>Wind</span>
+                            <span>UV</span>
+                        </div>
+                        ${comparison.map(loc => `
+                            <div class="comparison-row">
+                                <span>${loc.name}</span>
+                                <span>${loc.temperature}°</span>
+                                <span>${loc.rain}%</span>
+                                <span>${loc.wind} km/h</span>
+                                <span>${loc.uv}</span>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
             </div>
@@ -1974,6 +2228,7 @@ class MeghDrishtiApp {
 
 // Instantiate and start
 const app = new MeghDrishtiApp();
+window.app = app;
 window.addEventListener('DOMContentLoaded', () => {
     app.init();
 });
